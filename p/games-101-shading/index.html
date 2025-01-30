@@ -1,0 +1,223 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="前言：只记录自己需要的内容\n深度测试 （Z buffer or Depth buffer） 把深度视为无限远，然后遍历每一个山脚行，再遍历每一个三角形的光栅化过程，同时记录光栅化的深度信息。如果光栅化后当前像素点的深度信息小于之前记录过的信息，则替换原本的像素点信息。\n"><title>Games 101 - Shading</title>
+<link rel=canonical href=https://kampter.github.io/p/games-101-shading/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="Games 101 - Shading"><meta property='og:description' content="前言：只记录自己需要的内容\n深度测试 （Z buffer or Depth buffer） 把深度视为无限远，然后遍历每一个山脚行，再遍历每一个三角形的光栅化过程，同时记录光栅化的深度信息。如果光栅化后当前像素点的深度信息小于之前记录过的信息，则替换原本的像素点信息。\n"><meta property='og:url' content='https://kampter.github.io/p/games-101-shading/'><meta property='og:site_name' content='Kampter'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Computer Graphic'><meta property='article:tag' content='Math'><meta property='article:tag' content='HLSL'><meta property='article:tag' content='Unity'><meta property='article:tag' content='Games 101'><meta property='article:published_time' content='2022-09-11T16:31:55+00:00'><meta property='article:modified_time' content='2022-09-11T16:31:55+00:00'><meta name=twitter:title content="Games 101 - Shading"><meta name=twitter:description content="前言：只记录自己需要的内容\n深度测试 （Z buffer or Depth buffer） 把深度视为无限远，然后遍历每一个山脚行，再遍历每一个三角形的光栅化过程，同时记录光栅化的深度信息。如果光栅化后当前像素点的深度信息小于之前记录过的信息，则替换原本的像素点信息。\n"><link rel="shortcut icon" href=/favicon.png></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/touxiang_hu_dbfaca293029f929.jpg width=300 height=356 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🍔</span></figure><div class=site-meta><h1 class=site-name><a href=/>Kampter</a></h1><h2 class=site-description>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</h2></div></header><ol class=menu-social><li><a href=https://github.com/Kampter target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://x.com/wang_psbswsg target=_blank title=Twitter rel=me><svg class="icon icon-tabler icon-tabler-brand-twitter" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84.0 00.497-3.753C20.18 7.773 21.692 5.25 22 4.009z"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li><a href><span></span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#深度测试-z-buffer-or-depth-buffer>深度测试 （Z buffer or Depth buffer）</a></li><li><a href=#blinn-phong-reflectance-model-光照模型-着色模型>Blinn-Phong Reflectance Model 光照模型 着色模型</a><ol><li><a href=#diffuse>Diffuse</a></li><li><a href=#specular>Specular</a></li><li><a href=#ambient>Ambient</a></li><li><a href=#combine>Combine</a></li></ol></li><li><a href=#real-time-rendering>Real Time Rendering</a></li><li><a href=#纹理映射>纹理映射</a><ol><li><a href=#纹素>纹素</a></li></ol></li><li><a href=#参考>参考</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/>课程笔记</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/games-101-shading/>Games 101 - Shading</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Sep 11, 2022</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>4 minute read</time></div></footer></div></header><section class=article-content><p>前言：只记录自己需要的内容</p><hr><h2 id=深度测试-z-buffer-or-depth-buffer>深度测试 （Z buffer or Depth buffer）</h2><figure><img src=image-20230221163720934.png width=50%></figure><p>把深度视为无限远，然后遍历每一个山脚行，再遍历每一个三角形的光栅化过程，同时记录光栅化的深度信息。如果光栅化后当前像素点的深度信息小于之前记录过的信息，则替换原本的像素点信息。</p><figure><img src=Z-buffer.png width=50%></figure><p>Z-buffer：对每个像素多存一个深度</p><p>复杂度：O(n) for n triangles 并不是排序，而是只要最值</p><p>需要保证三角形进入顺序和结果无关</p><p>无法处理透明物体</p><h2 id=blinn-phong-reflectance-model-光照模型-着色模型>Blinn-Phong Reflectance Model 光照模型 着色模型</h2><h3 id=diffuse>Diffuse</h3><ul><li>$$
+L_{d}=k_{d}\left(I / r^{2}\right) \max (0, \mathbf{n} \cdot \mathbf{l})
+$$</li><li><p>可以简化为：</p><p>K_d 漫反射系数</p><p>I/r2 衰减后的灯光，LightColor * AttenuationLight</p><p>Max(0, normal dot LightDirction)</p></li></ul><h3 id=specular>Specular</h3><figure><img src=specular.png width=50%></figure><p>p一般100～200，控制高光大小</p><h3 id=ambient>Ambient</h3>$$
+L_{a}=k_{a} I_{a}
+$$<p>一般可以认为ambient为一个常数，要计算真实光照要考虑GI</p><h3 id=combine>Combine</h3>$$
+\begin{aligned} L &=L_{a}+L_{d}+L_{s} \\ &=k_{a} I_{a}+k_{d}\left(I / r^{2}\right) \max (0, \mathbf{n} \cdot \mathbf{l})+k_{s}\left(I / r^{2}\right) \max (0, \mathbf{n} \cdot \mathbf{h})^{p} \end{aligned}
+$$<p>&mdash; 2022.12.20 更新 &mdash;</p><p>URP实现</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span><span class=lnt>90
+</span><span class=lnt>91
+</span><span class=lnt>92
+</span><span class=lnt>93
+</span><span class=lnt>94
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-HLSL data-lang=HLSL><span class=line><span class=cl><span class=n>Shader</span> <span class=s>&#34;Custom/Blinn-Phong&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Properties</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_BaseColor</span> <span class=p>(</span><span class=s>&#34;Base Color&#34;</span><span class=p>,</span> <span class=n>Color</span><span class=p>)</span> <span class=o>=</span> <span class=p>(</span><span class=mf>1.0</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>_BaseMap</span> <span class=p>(</span><span class=s>&#34;Main Texture&#34;</span><span class=p>,</span> <span class=mi>2</span><span class=n>D</span><span class=p>)</span> <span class=o>=</span> <span class=s>&#34;white&#34;</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl>        <span class=n>_SpecColor</span><span class=p>(</span><span class=s>&#34;Specular Color&#34;</span><span class=p>,</span> <span class=n>Color</span><span class=p>)</span> <span class=o>=</span> <span class=p>(</span><span class=mf>1.0</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>_Smoothness</span><span class=p>(</span><span class=s>&#34;Smoothness&#34;</span><span class=p>,</span> <span class=n>range</span><span class=p>(</span><span class=mi>8</span><span class=p>,</span> <span class=mi>256</span><span class=p>))</span> <span class=o>=</span> <span class=mi>20</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=n>SubShader</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>Tags</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=s>&#34;RenderType&#34;</span><span class=o>=</span><span class=s>&#34;Opaque&#34;</span> 
+</span></span><span class=line><span class=cl>            <span class=s>&#34;RenderPipeline&#34;</span><span class=o>=</span><span class=s>&#34;UniversalRenderPipeline&#34;</span> 
+</span></span><span class=line><span class=cl>            <span class=s>&#34;LightMode&#34;</span> <span class=o>=</span> <span class=s>&#34;UniversalForward&#34;</span>
+</span></span><span class=line><span class=cl>            <span class=s>&#34;ShaderModel&#34;</span><span class=o>=</span><span class=s>&#34;4.5&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=n>LOD</span> <span class=mi>100</span>
+</span></span><span class=line><span class=cl>        <span class=n>Pass</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>HLSLPROGRAM</span>
+</span></span><span class=line><span class=cl>            <span class=err>#</span><span class=n>pragma</span> <span class=n>vertex</span> <span class=n>vert</span>
+</span></span><span class=line><span class=cl>            <span class=err>#</span><span class=n>pragma</span> <span class=n>fragment</span> <span class=n>frag</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=err>#</span><span class=n>include</span> <span class=s>&#34;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&#34;</span>
+</span></span><span class=line><span class=cl>            <span class=err>#</span><span class=n>include</span> <span class=s>&#34;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl&#34;</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=k>struct</span> <span class=n>Attributes</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>positionOS</span> <span class=o>:</span> <span class=n>POSITION</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>normal</span> <span class=o>:</span> <span class=n>NORMAL</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>tangetOS</span> <span class=o>:</span> <span class=n>TANGENT</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half2</span> <span class=n>uv</span> <span class=o>:</span> <span class=n>TEXCOORD0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=k>struct</span> <span class=n>Varyings</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>positionCS</span> <span class=o>:</span> <span class=n>SV_POSITION</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>positionWS</span> <span class=o>:</span> <span class=n>POSITION_WS</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half2</span> <span class=n>uv</span> <span class=o>:</span> <span class=n>TEXCOORD0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>normalWS</span> <span class=o>:</span> <span class=n>NORMAL_WS</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>TEXTURE2D</span><span class=p>(</span><span class=n>_BaseMap</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=n>SAMPLER</span><span class=p>(</span><span class=n>sampler_BaseMap</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=n>CBUFFER_START</span><span class=p>(</span><span class=n>UnityPerMaterial</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>_BaseMap_ST</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>_BaseColor</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>_SpecColor</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half</span> <span class=n>_Smoothness</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>CBUFFER_END</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=n>Varyings</span> <span class=n>vert</span> <span class=p>(</span><span class=n>Attributes</span> <span class=n>IN</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>const</span> <span class=n>VertexPositionInputs</span> <span class=n>vertex_position_inputs</span> <span class=o>=</span> <span class=n>GetVertexPositionInputs</span><span class=p>(</span><span class=n>IN</span><span class=p>.</span><span class=n>positionOS</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=k>const</span> <span class=n>VertexNormalInputs</span> <span class=n>vertex_normal_inputs</span> <span class=o>=</span> <span class=n>GetVertexNormalInputs</span><span class=p>(</span><span class=n>IN</span><span class=p>.</span><span class=n>normal</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=n>Varyings</span> <span class=n>OUT</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>OUT</span><span class=p>.</span><span class=n>positionWS</span> <span class=o>=</span> <span class=n>vertex_position_inputs</span><span class=p>.</span><span class=n>positionWS</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>OUT</span><span class=p>.</span><span class=n>positionCS</span> <span class=o>=</span> <span class=n>vertex_position_inputs</span><span class=p>.</span><span class=n>positionCS</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>OUT</span><span class=p>.</span><span class=n>uv</span> <span class=o>=</span> <span class=n>TRANSFORM_TEX</span><span class=p>(</span><span class=n>IN</span><span class=p>.</span><span class=n>uv</span><span class=p>,</span> <span class=n>_BaseMap</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>OUT</span><span class=p>.</span><span class=n>normalWS</span> <span class=o>=</span> <span class=n>vertex_normal_inputs</span><span class=p>.</span><span class=n>normalWS</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=k>return</span> <span class=n>OUT</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=kt>half4</span> <span class=n>frag</span> <span class=p>(</span><span class=n>Varyings</span> <span class=n>IN</span><span class=p>)</span> <span class=o>:</span> <span class=nd>SV_Target</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>Light</span> <span class=n>mainLight</span> <span class=o>=</span> <span class=n>GetMainLight</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>lightColor</span> <span class=o>=</span> <span class=n>mainLight</span><span class=p>.</span><span class=n>color</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>lightDir</span> <span class=o>=</span> <span class=nb>normalize</span><span class=p>(</span><span class=n>mainLight</span><span class=p>.</span><span class=n>direction</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>lightAtten</span> <span class=o>=</span> <span class=n>mainLight</span><span class=p>.</span><span class=n>distanceAttenuation</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// diffuse</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>albedo</span> <span class=o>=</span> <span class=n>SAMPLE_TEXTURE2D</span><span class=p>(</span><span class=n>_BaseMap</span><span class=p>,</span> <span class=n>sampler_BaseMap</span><span class=p>,</span> <span class=n>IN</span><span class=p>.</span><span class=n>uv</span><span class=p>)</span> <span class=o>*</span> <span class=n>_BaseColor</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half</span> <span class=n>kd</span> <span class=o>=</span> <span class=n>albedo</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half</span> <span class=n>light</span> <span class=o>=</span> <span class=n>lightColor</span> <span class=o>*</span> <span class=n>lightAtten</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half</span> <span class=n>ndotL</span> <span class=o>=</span> <span class=nb>max</span><span class=p>(</span><span class=mo>0</span><span class=p>,</span> <span class=nb>dot</span><span class=p>(</span><span class=n>IN</span><span class=p>.</span><span class=n>normalWS</span><span class=p>,</span> <span class=n>lightDir</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>diffuse</span> <span class=o>=</span> <span class=n>kd</span> <span class=o>*</span> <span class=n>light</span> <span class=o>*</span> <span class=n>ndotL</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// specular</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half</span> <span class=n>ks</span> <span class=o>=</span> <span class=mi>1</span> <span class=o>-</span> <span class=n>kd</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>viewDirWS</span> <span class=o>=</span> <span class=nb>normalize</span><span class=p>(</span><span class=n>GetCameraPositionWS</span><span class=p>()</span> <span class=o>-</span> <span class=n>IN</span><span class=p>.</span><span class=n>positionWS</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>halfDir</span> <span class=o>=</span> <span class=nb>normalize</span><span class=p>(</span><span class=n>viewDirWS</span> <span class=o>+</span> <span class=n>lightDir</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half</span> <span class=n>nDotH</span> <span class=o>=</span> <span class=nb>max</span><span class=p>(</span><span class=mo>0</span><span class=p>,</span> <span class=nb>dot</span><span class=p>(</span><span class=n>halfDir</span><span class=p>,</span> <span class=n>IN</span><span class=p>.</span><span class=n>normalWS</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>specular</span> <span class=o>=</span> <span class=n>ks</span> <span class=o>*</span> <span class=n>light</span> <span class=o>*</span> <span class=nb>pow</span><span class=p>(</span><span class=n>nDotH</span><span class=p>,</span> <span class=n>_Smoothness</span><span class=p>)</span> <span class=o>*</span> <span class=nb>saturate</span><span class=p>(</span><span class=n>_SpecColor</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// Ambient</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half3</span> <span class=n>ambient</span> <span class=o>=</span> <span class=mf>0.1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// Combine</span>
+</span></span><span class=line><span class=cl>                <span class=kt>half4</span> <span class=n>finalColor</span> <span class=o>=</span> <span class=kt>half4</span><span class=p>(</span><span class=n>ambient</span> <span class=o>+</span> <span class=n>diffuse</span> <span class=o>+</span> <span class=n>specular</span><span class=p>,</span> <span class=mf>1.0</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=k>return</span> <span class=n>finalColor</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=n>ENDHLSL</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>效果如下</p><figure><img src=image-20230222162300339.png width=50%></figure><h2 id=real-time-rendering>Real Time Rendering</h2><figure><img src=Real_Time_Rendering_Pipeline.png width=50%></figure><ol><li><p>应用阶段：CPU传递数据给GPU（包括纹理，材质，着色器，是否Culling）。Drawcall 即CPU每调用一次GPU就计算一次Drawcall</p></li><li><p>几何阶段：顶点着色器，几何着色器，曲面细分着色器，可编程。几何阶段还进行投影，裁切和屏幕映射等操作。</p><p>几何着色器常见应用：法线可视化，绘制图形（增加删除点）。曲面细分着色器常见应用: displacement 置换</p><p>投影：观察空间转换到<strong>裁剪空间</strong>（又被称为齐次裁剪空间）裁切：对透视裁剪空间来说，GPU需要对裁剪空间中的顶点执行齐次除法（其实就是将齐次坐标系中的w分量除x、y、z分量），得到顶点的<strong>归一化的设备坐标（Normalized Device Coordinates, NDC</strong>）屏幕映射：最终转化为<strong>屏幕空间</strong>，Z分量即Z-buffer</p></li><li><p>光栅化阶段：包括图元组装（三个点组成一个三角形），三角形遍历（参考光栅化笔记），片元着色器，逐片元操作包括<strong>裁剪测试（Scissor Test）</strong>、<strong>透明度测试（Alpha Test）</strong>、<strong>模板测试（Stencil Test）<strong>以及</strong>深度测试（Depth Test）</strong>，可自定义。</p><p>通过测试的片元可以进入合并，考虑是否颜色混合 （alpha blend）在经过上面的层层测试后，片元颜色就会被送到颜色缓冲区。GPU会使用<strong>双重缓冲（Double Buffering）<strong>的策略，即屏幕上显示</strong>前置缓冲（Front Buffer）</strong>，而渲染好的颜色先被送入<strong>后置缓冲（Back Buffer）</strong>，再替换前置缓冲，以此避免在屏幕上显示正在光栅化的图元。</p></li></ol><h2 id=纹理映射>纹理映射</h2><p>纹理映射即漫反射系数k_d</p><figure><img src=image-20230222160942261.png width=50%></figure><p>每一个3D模型的表面展开都是1个2d平面，2d平面的x y坐标用来查询纹理的uv坐标</p>$$
+\begin{aligned} \alpha &=\frac{-\left(x-x_{B}\right)\left(y_{C}-y_{B}\right)+\left(y-y_{B}\right)\left(x_{C}-x_{B}\right)}{-\left(x_{A}-x_{B}\right)\left(y_{C}-y_{B}\right)+\left(y_{A}-y_{B}\right)\left(x_{C}-x_{B}\right)} \\
+\beta &=\frac{-\left(x-x_{C}\right)\left(y_{A}-y_{C}\right)+\left(y-y_{C}\right)\left(x_{A}-x_{C}\right)}{-\left(x_{B}-x_{C}\right)\left(y_{A}-y_{C}\right)+\left(y_{B}-y_{C}\right)\left(x_{A}-x_{C}\right)} \\
+\gamma &=1-\alpha-\beta \end{aligned}
+$$<p>投影前后的重心坐标可能会变化，所以需要在对应时间计算对应的重心坐标来做插值，不能随意复用！</p><h3 id=纹素>纹素</h3><p>每张纹理贴图的一个像素点。</p><p>如果纹素太小，把多个pixel 映射同一个纹素</p><ul><li>解决：<ul><li>Nearest</li><li>Bilinear<ul><li>Bilinear 插值 lerp</li><li>水平+竖直插值→双线性插值</li><li>最近的四个点插值</li></ul></li><li>Bicubic 双向三次插值<ul><li>周围16个点做三次插值</li><li>运算量更大，结果更好</li></ul></li></ul></li></ul><p>如果纹素太大，会产生摩尔纹</p><figure><img src=image-20230222161014635.png width=50%></figure><p>用Mipmap降低纹理精度</p><figure><img src=image-20230222161030909.png width=50%></figure><p>各向异性过滤</p><p>把贴图的xy方向分别使用不同的mipmap，比如1024x1024的贴图可以变成128 x 256或者64 x 128</p><ul><li>怎么知道层数D？约为相邻pixel的映射uv之间的距离取2的对数</li><li>如果计算出来需要的D是整数，就很方便，直接查找</li><li>如果计算出来需要的D不是整数→Trilinear Interpolation三线性插值</li></ul><h2 id=参考>参考</h2><ol><li><a class=link href=https://zhuanlan.zhihu.com/p/137780634 target=_blank rel=noopener>https://zhuanlan.zhihu.com/p/137780634</a></li></ol></section><footer class=article-footer><section class=article-tags><a href=/tags/computer-graphic/>Computer Graphic</a>
+<a href=/tags/math/>Math</a>
+<a href=/tags/hlsl/>HLSL</a>
+<a href=/tags/unity/>Unity</a>
+<a href=/tags/games-101/>Games 101</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/games-202-%E9%98%B4%E5%BD%B1/><div class=article-details><h2 class=article-title>Games 202 - 阴影</h2></div></a></article><article><a href=/p/games-101-pbr%E5%8E%9F%E7%90%86/><div class=article-details><h2 class=article-title>Games 101 - PBR原理</h2></div></a></article><article><a href=/p/games-101-%E5%85%89%E6%A0%85%E5%8C%96/><div class=article-details><h2 class=article-title>Games 101 - 光栅化</h2></div></a></article><article><a href=/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/><div class=article-details><h2 class=article-title>Games 101 - 线代和变换</h2></div></a></article><article><a href=/p/games-202-pbr-rendering-%E6%80%BB%E7%BB%93/><div class=article-details><h2 class=article-title>Games 202 - PBR rendering 总结</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//Kampter Blog.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2025 Kampter</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

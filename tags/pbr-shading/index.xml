@@ -1,0 +1,1194 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>PBR Shading on Kampter</title><link>https://kampter.github.io/tags/pbr-shading/</link><description>Recent content in PBR Shading on Kampter</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 16 Mar 2023 23:33:20 +0000</lastBuildDate><atom:link href="https://kampter.github.io/tags/pbr-shading/index.xml" rel="self" type="application/rss+xml"/><item><title>在URP中搭建一个Disney Principled BRDF</title><link>https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/</link><pubDate>Thu, 16 Mar 2023 23:33:20 +0000</pubDate><guid>https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/</guid><description>&lt;h2 id="技术实现">技术实现
+&lt;/h2>&lt;p>Unity 自带的Lit 采用了通用的microfacet Cook-Torrance BRDF着色模型，对于各向异性，清漆，布料等支持并没有实现。这里希望搭建一个Disney Principled BRDF 来学习源码并且扩充这部分shader便于以后风格化定制。&lt;/p>
+&lt;h3 id="diffuse项实现">Diffuse项实现
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">Disney_Diffuse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half3&lt;/span> &lt;span class="n">diffuseColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FD90&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.5&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">2&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">LdotH&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">LdotH&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FnV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FnL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FD90&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FnV&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FD90&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FnL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>unity实现如下，但是UE把LdotH修改成VdotH&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">Diffuse_Burley_Disney&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">float3&lt;/span> &lt;span class="n">diffuseColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">float&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">float&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">float&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">float&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">FD90&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.5&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">2&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">LdotH&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">LdotH&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">FdV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">FD90&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow5&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">FdL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">FD90&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow5&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">diffuseColor&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">PI&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">FdV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">FdL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230316234314746.png"
+width="405"
+height="208"
+srcset="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230316234314746_hu_70a5aeb241fe07a3.png 480w, https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230316234314746_hu_ef09b411a41871b9.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="194"
+data-flex-basis="467px"
+>&lt;/p>
+&lt;p>UE的修改会造成远距离看diffuse模型变成一个没有明暗区分的模型。&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230316234400394.png"
+width="411"
+height="166"
+srcset="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230316234400394_hu_5ab6b57e342b3d85.png 480w, https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230316234400394_hu_468ea8e6d5fe5a68.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="247"
+data-flex-basis="594px"
+>&lt;/p>
+&lt;p>这与Disney的效果十分接近&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230317001852780.png" width="30%">
+&lt;/figure>
+&lt;h3 id="完整代码">完整代码
+&lt;/h3>&lt;p>偷懒没有逐一贴过来，完整写完直接代码在这里。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt"> 10
+&lt;/span>&lt;span class="lnt"> 11
+&lt;/span>&lt;span class="lnt"> 12
+&lt;/span>&lt;span class="lnt"> 13
+&lt;/span>&lt;span class="lnt"> 14
+&lt;/span>&lt;span class="lnt"> 15
+&lt;/span>&lt;span class="lnt"> 16
+&lt;/span>&lt;span class="lnt"> 17
+&lt;/span>&lt;span class="lnt"> 18
+&lt;/span>&lt;span class="lnt"> 19
+&lt;/span>&lt;span class="lnt"> 20
+&lt;/span>&lt;span class="lnt"> 21
+&lt;/span>&lt;span class="lnt"> 22
+&lt;/span>&lt;span class="lnt"> 23
+&lt;/span>&lt;span class="lnt"> 24
+&lt;/span>&lt;span class="lnt"> 25
+&lt;/span>&lt;span class="lnt"> 26
+&lt;/span>&lt;span class="lnt"> 27
+&lt;/span>&lt;span class="lnt"> 28
+&lt;/span>&lt;span class="lnt"> 29
+&lt;/span>&lt;span class="lnt"> 30
+&lt;/span>&lt;span class="lnt"> 31
+&lt;/span>&lt;span class="lnt"> 32
+&lt;/span>&lt;span class="lnt"> 33
+&lt;/span>&lt;span class="lnt"> 34
+&lt;/span>&lt;span class="lnt"> 35
+&lt;/span>&lt;span class="lnt"> 36
+&lt;/span>&lt;span class="lnt"> 37
+&lt;/span>&lt;span class="lnt"> 38
+&lt;/span>&lt;span class="lnt"> 39
+&lt;/span>&lt;span class="lnt"> 40
+&lt;/span>&lt;span class="lnt"> 41
+&lt;/span>&lt;span class="lnt"> 42
+&lt;/span>&lt;span class="lnt"> 43
+&lt;/span>&lt;span class="lnt"> 44
+&lt;/span>&lt;span class="lnt"> 45
+&lt;/span>&lt;span class="lnt"> 46
+&lt;/span>&lt;span class="lnt"> 47
+&lt;/span>&lt;span class="lnt"> 48
+&lt;/span>&lt;span class="lnt"> 49
+&lt;/span>&lt;span class="lnt"> 50
+&lt;/span>&lt;span class="lnt"> 51
+&lt;/span>&lt;span class="lnt"> 52
+&lt;/span>&lt;span class="lnt"> 53
+&lt;/span>&lt;span class="lnt"> 54
+&lt;/span>&lt;span class="lnt"> 55
+&lt;/span>&lt;span class="lnt"> 56
+&lt;/span>&lt;span class="lnt"> 57
+&lt;/span>&lt;span class="lnt"> 58
+&lt;/span>&lt;span class="lnt"> 59
+&lt;/span>&lt;span class="lnt"> 60
+&lt;/span>&lt;span class="lnt"> 61
+&lt;/span>&lt;span class="lnt"> 62
+&lt;/span>&lt;span class="lnt"> 63
+&lt;/span>&lt;span class="lnt"> 64
+&lt;/span>&lt;span class="lnt"> 65
+&lt;/span>&lt;span class="lnt"> 66
+&lt;/span>&lt;span class="lnt"> 67
+&lt;/span>&lt;span class="lnt"> 68
+&lt;/span>&lt;span class="lnt"> 69
+&lt;/span>&lt;span class="lnt"> 70
+&lt;/span>&lt;span class="lnt"> 71
+&lt;/span>&lt;span class="lnt"> 72
+&lt;/span>&lt;span class="lnt"> 73
+&lt;/span>&lt;span class="lnt"> 74
+&lt;/span>&lt;span class="lnt"> 75
+&lt;/span>&lt;span class="lnt"> 76
+&lt;/span>&lt;span class="lnt"> 77
+&lt;/span>&lt;span class="lnt"> 78
+&lt;/span>&lt;span class="lnt"> 79
+&lt;/span>&lt;span class="lnt"> 80
+&lt;/span>&lt;span class="lnt"> 81
+&lt;/span>&lt;span class="lnt"> 82
+&lt;/span>&lt;span class="lnt"> 83
+&lt;/span>&lt;span class="lnt"> 84
+&lt;/span>&lt;span class="lnt"> 85
+&lt;/span>&lt;span class="lnt"> 86
+&lt;/span>&lt;span class="lnt"> 87
+&lt;/span>&lt;span class="lnt"> 88
+&lt;/span>&lt;span class="lnt"> 89
+&lt;/span>&lt;span class="lnt"> 90
+&lt;/span>&lt;span class="lnt"> 91
+&lt;/span>&lt;span class="lnt"> 92
+&lt;/span>&lt;span class="lnt"> 93
+&lt;/span>&lt;span class="lnt"> 94
+&lt;/span>&lt;span class="lnt"> 95
+&lt;/span>&lt;span class="lnt"> 96
+&lt;/span>&lt;span class="lnt"> 97
+&lt;/span>&lt;span class="lnt"> 98
+&lt;/span>&lt;span class="lnt"> 99
+&lt;/span>&lt;span class="lnt">100
+&lt;/span>&lt;span class="lnt">101
+&lt;/span>&lt;span class="lnt">102
+&lt;/span>&lt;span class="lnt">103
+&lt;/span>&lt;span class="lnt">104
+&lt;/span>&lt;span class="lnt">105
+&lt;/span>&lt;span class="lnt">106
+&lt;/span>&lt;span class="lnt">107
+&lt;/span>&lt;span class="lnt">108
+&lt;/span>&lt;span class="lnt">109
+&lt;/span>&lt;span class="lnt">110
+&lt;/span>&lt;span class="lnt">111
+&lt;/span>&lt;span class="lnt">112
+&lt;/span>&lt;span class="lnt">113
+&lt;/span>&lt;span class="lnt">114
+&lt;/span>&lt;span class="lnt">115
+&lt;/span>&lt;span class="lnt">116
+&lt;/span>&lt;span class="lnt">117
+&lt;/span>&lt;span class="lnt">118
+&lt;/span>&lt;span class="lnt">119
+&lt;/span>&lt;span class="lnt">120
+&lt;/span>&lt;span class="lnt">121
+&lt;/span>&lt;span class="lnt">122
+&lt;/span>&lt;span class="lnt">123
+&lt;/span>&lt;span class="lnt">124
+&lt;/span>&lt;span class="lnt">125
+&lt;/span>&lt;span class="lnt">126
+&lt;/span>&lt;span class="lnt">127
+&lt;/span>&lt;span class="lnt">128
+&lt;/span>&lt;span class="lnt">129
+&lt;/span>&lt;span class="lnt">130
+&lt;/span>&lt;span class="lnt">131
+&lt;/span>&lt;span class="lnt">132
+&lt;/span>&lt;span class="lnt">133
+&lt;/span>&lt;span class="lnt">134
+&lt;/span>&lt;span class="lnt">135
+&lt;/span>&lt;span class="lnt">136
+&lt;/span>&lt;span class="lnt">137
+&lt;/span>&lt;span class="lnt">138
+&lt;/span>&lt;span class="lnt">139
+&lt;/span>&lt;span class="lnt">140
+&lt;/span>&lt;span class="lnt">141
+&lt;/span>&lt;span class="lnt">142
+&lt;/span>&lt;span class="lnt">143
+&lt;/span>&lt;span class="lnt">144
+&lt;/span>&lt;span class="lnt">145
+&lt;/span>&lt;span class="lnt">146
+&lt;/span>&lt;span class="lnt">147
+&lt;/span>&lt;span class="lnt">148
+&lt;/span>&lt;span class="lnt">149
+&lt;/span>&lt;span class="lnt">150
+&lt;/span>&lt;span class="lnt">151
+&lt;/span>&lt;span class="lnt">152
+&lt;/span>&lt;span class="lnt">153
+&lt;/span>&lt;span class="lnt">154
+&lt;/span>&lt;span class="lnt">155
+&lt;/span>&lt;span class="lnt">156
+&lt;/span>&lt;span class="lnt">157
+&lt;/span>&lt;span class="lnt">158
+&lt;/span>&lt;span class="lnt">159
+&lt;/span>&lt;span class="lnt">160
+&lt;/span>&lt;span class="lnt">161
+&lt;/span>&lt;span class="lnt">162
+&lt;/span>&lt;span class="lnt">163
+&lt;/span>&lt;span class="lnt">164
+&lt;/span>&lt;span class="lnt">165
+&lt;/span>&lt;span class="lnt">166
+&lt;/span>&lt;span class="lnt">167
+&lt;/span>&lt;span class="lnt">168
+&lt;/span>&lt;span class="lnt">169
+&lt;/span>&lt;span class="lnt">170
+&lt;/span>&lt;span class="lnt">171
+&lt;/span>&lt;span class="lnt">172
+&lt;/span>&lt;span class="lnt">173
+&lt;/span>&lt;span class="lnt">174
+&lt;/span>&lt;span class="lnt">175
+&lt;/span>&lt;span class="lnt">176
+&lt;/span>&lt;span class="lnt">177
+&lt;/span>&lt;span class="lnt">178
+&lt;/span>&lt;span class="lnt">179
+&lt;/span>&lt;span class="lnt">180
+&lt;/span>&lt;span class="lnt">181
+&lt;/span>&lt;span class="lnt">182
+&lt;/span>&lt;span class="lnt">183
+&lt;/span>&lt;span class="lnt">184
+&lt;/span>&lt;span class="lnt">185
+&lt;/span>&lt;span class="lnt">186
+&lt;/span>&lt;span class="lnt">187
+&lt;/span>&lt;span class="lnt">188
+&lt;/span>&lt;span class="lnt">189
+&lt;/span>&lt;span class="lnt">190
+&lt;/span>&lt;span class="lnt">191
+&lt;/span>&lt;span class="lnt">192
+&lt;/span>&lt;span class="lnt">193
+&lt;/span>&lt;span class="lnt">194
+&lt;/span>&lt;span class="lnt">195
+&lt;/span>&lt;span class="lnt">196
+&lt;/span>&lt;span class="lnt">197
+&lt;/span>&lt;span class="lnt">198
+&lt;/span>&lt;span class="lnt">199
+&lt;/span>&lt;span class="lnt">200
+&lt;/span>&lt;span class="lnt">201
+&lt;/span>&lt;span class="lnt">202
+&lt;/span>&lt;span class="lnt">203
+&lt;/span>&lt;span class="lnt">204
+&lt;/span>&lt;span class="lnt">205
+&lt;/span>&lt;span class="lnt">206
+&lt;/span>&lt;span class="lnt">207
+&lt;/span>&lt;span class="lnt">208
+&lt;/span>&lt;span class="lnt">209
+&lt;/span>&lt;span class="lnt">210
+&lt;/span>&lt;span class="lnt">211
+&lt;/span>&lt;span class="lnt">212
+&lt;/span>&lt;span class="lnt">213
+&lt;/span>&lt;span class="lnt">214
+&lt;/span>&lt;span class="lnt">215
+&lt;/span>&lt;span class="lnt">216
+&lt;/span>&lt;span class="lnt">217
+&lt;/span>&lt;span class="lnt">218
+&lt;/span>&lt;span class="lnt">219
+&lt;/span>&lt;span class="lnt">220
+&lt;/span>&lt;span class="lnt">221
+&lt;/span>&lt;span class="lnt">222
+&lt;/span>&lt;span class="lnt">223
+&lt;/span>&lt;span class="lnt">224
+&lt;/span>&lt;span class="lnt">225
+&lt;/span>&lt;span class="lnt">226
+&lt;/span>&lt;span class="lnt">227
+&lt;/span>&lt;span class="lnt">228
+&lt;/span>&lt;span class="lnt">229
+&lt;/span>&lt;span class="lnt">230
+&lt;/span>&lt;span class="lnt">231
+&lt;/span>&lt;span class="lnt">232
+&lt;/span>&lt;span class="lnt">233
+&lt;/span>&lt;span class="lnt">234
+&lt;/span>&lt;span class="lnt">235
+&lt;/span>&lt;span class="lnt">236
+&lt;/span>&lt;span class="lnt">237
+&lt;/span>&lt;span class="lnt">238
+&lt;/span>&lt;span class="lnt">239
+&lt;/span>&lt;span class="lnt">240
+&lt;/span>&lt;span class="lnt">241
+&lt;/span>&lt;span class="lnt">242
+&lt;/span>&lt;span class="lnt">243
+&lt;/span>&lt;span class="lnt">244
+&lt;/span>&lt;span class="lnt">245
+&lt;/span>&lt;span class="lnt">246
+&lt;/span>&lt;span class="lnt">247
+&lt;/span>&lt;span class="lnt">248
+&lt;/span>&lt;span class="lnt">249
+&lt;/span>&lt;span class="lnt">250
+&lt;/span>&lt;span class="lnt">251
+&lt;/span>&lt;span class="lnt">252
+&lt;/span>&lt;span class="lnt">253
+&lt;/span>&lt;span class="lnt">254
+&lt;/span>&lt;span class="lnt">255
+&lt;/span>&lt;span class="lnt">256
+&lt;/span>&lt;span class="lnt">257
+&lt;/span>&lt;span class="lnt">258
+&lt;/span>&lt;span class="lnt">259
+&lt;/span>&lt;span class="lnt">260
+&lt;/span>&lt;span class="lnt">261
+&lt;/span>&lt;span class="lnt">262
+&lt;/span>&lt;span class="lnt">263
+&lt;/span>&lt;span class="lnt">264
+&lt;/span>&lt;span class="lnt">265
+&lt;/span>&lt;span class="lnt">266
+&lt;/span>&lt;span class="lnt">267
+&lt;/span>&lt;span class="lnt">268
+&lt;/span>&lt;span class="lnt">269
+&lt;/span>&lt;span class="lnt">270
+&lt;/span>&lt;span class="lnt">271
+&lt;/span>&lt;span class="lnt">272
+&lt;/span>&lt;span class="lnt">273
+&lt;/span>&lt;span class="lnt">274
+&lt;/span>&lt;span class="lnt">275
+&lt;/span>&lt;span class="lnt">276
+&lt;/span>&lt;span class="lnt">277
+&lt;/span>&lt;span class="lnt">278
+&lt;/span>&lt;span class="lnt">279
+&lt;/span>&lt;span class="lnt">280
+&lt;/span>&lt;span class="lnt">281
+&lt;/span>&lt;span class="lnt">282
+&lt;/span>&lt;span class="lnt">283
+&lt;/span>&lt;span class="lnt">284
+&lt;/span>&lt;span class="lnt">285
+&lt;/span>&lt;span class="lnt">286
+&lt;/span>&lt;span class="lnt">287
+&lt;/span>&lt;span class="lnt">288
+&lt;/span>&lt;span class="lnt">289
+&lt;/span>&lt;span class="lnt">290
+&lt;/span>&lt;span class="lnt">291
+&lt;/span>&lt;span class="lnt">292
+&lt;/span>&lt;span class="lnt">293
+&lt;/span>&lt;span class="lnt">294
+&lt;/span>&lt;span class="lnt">295
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Shader&lt;/span> &lt;span class="s">&amp;#34;Custom/Disney PBR&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Properties&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//Disney coefficients&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">[&lt;/span>&lt;span class="n">MainTexture&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="n">_BaseMap&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Base Color&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="n">D&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;white&amp;#34;&lt;/span> &lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_MainColor&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Color Tint&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Color&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Metallic&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Metallic&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Smoothness&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Smoothness&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Subsurface&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Subsurface&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Specular&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Specular&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_SpecularTint&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;SpecularTint&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Anisotropic&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Anisotropic&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Sheen&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Sheen&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_SheenTint&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;SheenTint&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Clearcoat&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Clearcoat&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_ClearcoatGloss&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;ClearcoatGloss&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//Normal control&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_BumpScale&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Normal Scale&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">1.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_BumpMap&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Normal Map&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="n">D&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;bump&amp;#34;&lt;/span> &lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//GI control&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// _IrradianceMap (&amp;#34;Irradiance Map&amp;#34;, CUBE) = &amp;#34;white&amp;#34; {}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_LUT&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;LUT&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="n">D&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;white&amp;#34;&lt;/span> &lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// _PrefilterMap (&amp;#34;Prefilter Map&amp;#34;, CUBE) = &amp;#34;white&amp;#34; {}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// _AO (&amp;#34;AO&amp;#34;, 2D) = &amp;#34;white&amp;#34; {}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SubShader&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Tags&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s">&amp;#34;RenderType&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;Opaque&amp;#34;&lt;/span> &lt;span class="s">&amp;#34;RenderPipeLine&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;UniversalRenderPipeline&amp;#34;&lt;/span> &lt;span class="s">&amp;#34;IgnoreProjector&amp;#34;&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;True&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">HLSLINCLUDE&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">include&lt;/span> &lt;span class="s">&amp;#34;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">include&lt;/span> &lt;span class="s">&amp;#34;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_BaseMap&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="n">SAMPLER&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sample_BaseMap&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_BumpMap&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="n">SAMPLER&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sampler_BumpMap&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_LUT&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="n">SAMPLER&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sampler_LUT&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CBUFFER_START&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">UnityPerMaterial&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_BaseMap_ST&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_MainColor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Metallic&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Smoothness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Subsurface&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Specular&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_SpecularTint&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Anisotropic&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Sheen&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_SheenTint&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Clearcoat&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_ClearcoatGloss&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_BumpMap_ST&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_BumpScale&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_LUT_ST&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CBUFFER_END&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">struct&lt;/span> &lt;span class="n">Attributes&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">positionOS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">POSITION&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">normalOS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">NORMAL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">tangetOS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TANGENT&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">uv&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">lightmapUV&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">UNITY_VERTEX_INPUT_INSTANCE_ID&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">struct&lt;/span> &lt;span class="n">Varyings&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">positionCS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">SV_POSITION&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">positionWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">normalWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">uv&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">tangentWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD3&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">lightmapUV&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD4&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">bitangentWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD5&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">viewDirWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD6&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">fogCoord&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD7&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">UNITY_VERTEX_INPUT_INSTANCE_ID&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ENDHLSL&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Pass&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Name&lt;/span> &lt;span class="s">&amp;#34;DisneyForward&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Tags&lt;/span>&lt;span class="p">{&lt;/span> &lt;span class="s">&amp;#34;LightMode&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;UniversalForward&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CULL&lt;/span> &lt;span class="n">OFF&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">HLSLPROGRAM&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">vertex&lt;/span> &lt;span class="n">vert&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">fragment&lt;/span> &lt;span class="n">frag&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">multi_compile_fog&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">shader_feature_local_fragement&lt;/span> &lt;span class="n">_EMISSION&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">define&lt;/span> &lt;span class="n">_NORMALMAP&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Varyings&lt;/span> &lt;span class="n">vert&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Attributes&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Varyings&lt;/span> &lt;span class="n">OUT&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Varyings&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">UNITY_SETUP_INSTANCE_ID&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">UNITY_TRANSFER_INSTANCE_ID&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">OUT&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">const&lt;/span> &lt;span class="n">VertexPositionInputs&lt;/span> &lt;span class="n">vpi&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetVertexPositionInputs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionOS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">const&lt;/span> &lt;span class="n">VertexNormalInputs&lt;/span> &lt;span class="n">vni&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetVertexNormalInputs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalOS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">tangetOS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// get positive or negative normal signal (should be either 1 or -1)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="nb">sign&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">tangetOS&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">w&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">GetOddNegativeScale&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vpi&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionCS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vpi&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionCS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">TRANSFORM_TEX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_BaseMap&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">tangentWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">tangentWS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">bitangentWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">bitangentWS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">lightmapUV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">lightmapUV&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">fogCoord&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ComputeFogFactor&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionCS&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">z&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">OUT&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">v&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">v&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">v&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Pow5&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">v&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">v&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">v&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">v&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">v&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">v&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">v&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">v&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">clamp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">v&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">Pow5&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">v&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Disney_Diffuse_Kfd&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FD90&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.5&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">2&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">LdotH&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FnV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FnL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FD90&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FnV&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FD90&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FnL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Disney_Specular_GTR2_iso&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">NdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">a2&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">den&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">1.0&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotH&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">a2&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">den&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">PI&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">SmithsG_GGX_aniso&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">NdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">XdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">YdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ax&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ay&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nb">sqrt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">XdotV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ax&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">YdotV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ay&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Specular_Fresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half3&lt;/span> &lt;span class="n">Ctint&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Cdlin&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">Metallic&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FlH&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">LdotH&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_Specular&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mf">0.08&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">Ctint&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_SpecularTint&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">Cdlin&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Metallic&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">F0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">FlH&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">F&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Disney_Clear_GTR1&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">NdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">PI&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">a2&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nb">log&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotH&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">PI&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Disney_Clear_GGX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">NdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">a2&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">GGXnv&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nb">sqrt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">a2&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">GGXnl&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">NdotL&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="nb">sqrt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">a2&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotL&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">GGXnv&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">GGXnl&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Disney_Subsurface_ss&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">NdotV&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">FnL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Fnv&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Fss90&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Pow2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">LdotH&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Fss&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Fss90&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FnL&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Fss90&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Fnv&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="mf">1.25&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Fss&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mf">0.5&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">0.5&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">fresnelSchlickRoughness&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">cosTheta&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">F0&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Pow5&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">cosTheta&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">frag&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Varyings&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="nd">SV_Target&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//albedo &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">albedoAlpha&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SAMPLE_TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_BaseMap&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sampler_BumpMap&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">albedo&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">albedoAlpha&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rgb&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">_MainColor&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rgb&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">alpha&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">albedoAlpha&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">a&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">_MainColor&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//rip off the energy from albedo &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">Cdlum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.3&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">r&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">0.6&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">g&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">0.1&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">b&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float3&lt;/span> &lt;span class="n">Ctint&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Cdlum&lt;/span> &lt;span class="o">&amp;gt;&lt;/span> &lt;span class="mo">0&lt;/span> &lt;span class="o">?&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">albedo&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">Cdlum&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="kt">float3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float3&lt;/span> &lt;span class="n">Csheen&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">float3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">Ctint&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_SheenTint&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//normal&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">ifdef&lt;/span> &lt;span class="n">_NORMALMAP&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">normalTS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">UnpackNormalScale&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">SAMPLE_TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_BumpMap&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sampler_BumpMap&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">_BumpScale&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">TransformTangentToWorld&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">normalTS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half3x3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">tangentWS&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">xyz&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">bitangentWS&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">xyz&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">xyz&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">endif&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//roughness&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">perceptualRoughness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">_Smoothness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">perceptualRoughness&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">perceptualRoughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">squareRoughness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Direction Function&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">viewDirWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetWorldSpaceViewDir&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Lighting Calculation&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">shadowCoord&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">TransformWorldToShadowCoord&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Light&lt;/span> &lt;span class="n">mainLight&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetMainLight&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">shadowCoord&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">mainLightDir&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">normalize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">TransformObjectToWorldDir&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">mainLight&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">direction&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//anisotropic&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">halfVector&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">normalize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">viewDirWS&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">mainLightDir&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">aspect&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">sqrt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">_Anisotropic&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mf">0.9&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">ax&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">squareRoughness&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">aspect&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">ay&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">squareRoughness&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">aspect&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">hx&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">halfVector&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">tangentWS&lt;/span>&lt;span class="p">)),&lt;/span> &lt;span class="mf">0.000001&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">hy&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">halfVector&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">bitangentWS&lt;/span>&lt;span class="p">)),&lt;/span> &lt;span class="mf">0.000001&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">XdotV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">hx&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">viewDirWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">YdotV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">hy&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">viewDirWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">XdotL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">hx&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">mainLightDir&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">YdotL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">hy&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">mainLightDir&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Dot Product Function&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">NdotL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.000001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">mainLightDir&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">NdotV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.000001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">viewDirWS&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">NdotH&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.000001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">halfVector&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">VdotH&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.000001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">viewDirWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">halfVector&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">LdotH&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.000001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">mainLightDir&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">halfVector&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//directLight Specular&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//D term&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Ds&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Disney_Specular_GTR2_iso&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//G term&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">GnV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SmithsG_GGX_aniso&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">XdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">YdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ax&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ay&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">GnL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SmithsG_GGX_aniso&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">XdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">YdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ax&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ay&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Gs&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GnV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">GnL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//F term&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Fs&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Specular_Fresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Ctint&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_Metallic&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//directLight clearcoat D F G&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Dr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Disney_Clear_GTR1&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">0.001&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_ClearcoatGloss&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kt">float3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">0.04&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">0.04&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">0.04&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Fr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">F0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">float3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">LdotH&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">Gr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Disney_Clear_GGX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">0.25&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//conbine specular part &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">specular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Gs&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Fs&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Ds&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">Dr&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Gr&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Fr&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mf">0.25&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">_Clearcoat&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// diffuse&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Kd&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Disney_Diffuse_Kfd&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">NdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">VdotH&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">ss&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Disney_Subsurface_ss&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">LdotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">NdotV&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">Fsheen&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SchlickFresnel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">LdotH&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">_Sheen&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">Csheen&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">diffuse&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">albedo&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Kd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ss&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_Subsurface&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">PI&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">Fsheen&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">_Metallic&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// direct Lighting&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">directLight&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">diffuse&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">specular&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">mainLight&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">color&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">NdotL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">directLight&lt;/span> &lt;span class="o">*=&lt;/span> &lt;span class="n">mainLight&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">distanceAttenuation&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// indirect Lighting&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//GI Diffuse&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">F0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">kDieletricSpec&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rgb&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_Metallic&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F_ibl&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">fresnelSchlickRoughness&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">NdotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">kd_ibl&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">F_ibl&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">r&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">_Metallic&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">irradiance&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SampleSH&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">inDiffuse&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">kd_ibl&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">albedo&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">irradiance&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">//GI Specular&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">reflectVector&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">reflect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">viewDirWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">mip&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.7&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mf">0.7&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">UNITY_SPECCUBE_LOD_STEPS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">prefilter_Specular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SAMPLE_TEXTURECUBE_LOD&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">unity_SpecCube0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">samplerunity_SpecCube0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">reflectVector&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">mip&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">envBRDF&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SAMPLE_TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_LUT&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sampler_LUT&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">float2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">0.99&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">NdotV&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">0.99&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">))).&lt;/span>&lt;span class="n">rg&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">inSpecular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">prefilter_Specular&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">envBRDF&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">r&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">F_ibl&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">envBRDF&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">g&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">indirectLight&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">inDiffuse&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">inSpecular&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">color&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kt">half4&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">directLight&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">indirectLight&lt;/span> &lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// apply fog&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">color&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">xyz&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">MixFog&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">color&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">xyz&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">fogCoord&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">color&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ENDHLSL&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>间接光漫反射的部分偷懒直接使用Unity URP内置的 sampleSH函数。而间接光镜面反射部分也直接用reflection probe作为prefileter 采样。envBRDF的lut贴图直接采样预计算好的。其实如果仔细看源码的部分URP在间接光照的部分也对clearcoat进行处理&lt;/p>
+&lt;h2 id="最终效果">最终效果
+&lt;/h2>&lt;p>我实现的效果在左边，对比右边URP下默认的Lit&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230317121626944.png"
+width="708"
+height="323"
+srcset="https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230317121626944_hu_55fa470e12689fb8.png 480w, https://kampter.github.io/p/%E5%9C%A8urp%E4%B8%AD%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAdisney-principled-brdf/image-20230317121626944_hu_4505b4e87857bb22.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="219"
+data-flex-basis="526px"
+>&lt;/p></description></item><item><title>尝试在URP下手写 PBR shader</title><link>https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/</link><pubDate>Fri, 10 Feb 2023 12:58:11 +0000</pubDate><guid>https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/</guid><description>&lt;img src="https://kampter.github.io/images/blog/image-20230214155911531.png" alt="Featured image of post 尝试在URP下手写 PBR shader" />&lt;h2 id="cook-torrance-brdf">Cook-Torrance BRDF
+&lt;/h2>&lt;p>Cook-Torrance BRDF的镜面反射部分包含三个函数，此外分母部分还有一个标准化因子 。字母D，F与G分别代表着一种类型的函数，各个函数分别用来近似的计算出表面反射特性的一个特定部分。三个函数分别为法线分布函数(Normal &lt;strong>D&lt;/strong>istribution Function)，菲涅尔方程(&lt;strong>F&lt;/strong>resnel Rquation)和几何函数(&lt;strong>G&lt;/strong>eometry Function)：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>D项 - &lt;strong>法线分布函数&lt;/strong>: 估算在受到表面粗糙度的影响下，朝向方向与半程向量一致的微平面的数量。这是用来估算微平面的主要函数。&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152113538.png"
+width="522"
+height="81"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152113538_hu_f4479610ad2e84e5.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152113538_hu_6fe5f1371ddaefb6.png 1024w"
+loading="lazy"
+alt="image-20230213152113538"
+class="gallery-image"
+data-flex-grow="644"
+data-flex-basis="1546px"
+>&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">Function_D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">ndotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">a2&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotH2&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ndotH&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotH&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">nom&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">a2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">denom&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ndotH2&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a2&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">denom&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">PI&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">denom&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">denom&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">nom&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">denom&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152220206.png"
+width="1471"
+height="753"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152220206_hu_29e67dc49c564a00.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152220206_hu_82fbeb0bd8f52906.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;ul>
+&lt;li>
+&lt;p>G项 - &lt;strong>几何函数&lt;/strong>：&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>几何函数从统计学上近似的求得了微平面间相互遮蔽的比率，这种相互遮蔽会损耗光线的能量。&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/geometry_shadowing.png"
+width="574"
+height="181"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/geometry_shadowing_hu_b6139394e972567f.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/geometry_shadowing_hu_599655a9d7c92cdc.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="317"
+data-flex-basis="761px"
+>&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152316678.png"
+width="465"
+height="80"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152316678_hu_aabf8d51e371edaf.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152316678_hu_2a53a0c9cb74fcb2.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="581"
+data-flex-basis="1395px"
+>&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>为了有效的估算几何部分，需要将观察方向（几何遮蔽(Geometry Obstruction)）和光线方向向量（几何阴影(Geometry Shadowing)）都考虑进去。我们可以使用史密斯法(Smith’s method)来把两者都纳入其中(第二次计算把v换成l)：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152658568.png"
+width="435"
+height="59"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152658568_hu_3aadd85c504c95fb.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213152658568_hu_b546b74e0c632c83.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="737"
+data-flex-basis="1769px"
+>&lt;/p>
+&lt;p>这里的k是α的重映射(Remapping)，取决于我们要用的是针对直接光照还是针对IBL光照的几何函数:&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213153404416.png"
+width="223"
+height="152"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213153404416_hu_e8e77ea17a88b9fb.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213153404416_hu_d02948bb4da56ce5.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="352px"
+>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">GeometrySchlickGGX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">nom&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">denom&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ndotV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">nom&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">denom&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">GeometrySmith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">ggx1&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GeometrySchlickGGX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float&lt;/span> &lt;span class="n">ggx2&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GeometrySchlickGGX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">ggx1&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ggx2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">Function_G&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">GeometrySmith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">k&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213153857894.png"
+width="1471"
+height="753"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213153857894_hu_38f8f2936a9bc4fa.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213153857894_hu_ed9ebbc48be34d3d.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;ul>
+&lt;li>F项 - &lt;strong>菲涅尔方程&lt;/strong>：菲涅尔方程描述的是在不同的表面角下表面所反射的光线所占的比率。&lt;/li>
+&lt;/ul>
+&lt;p>菲涅尔方程是一个相当复杂的方程式，不过幸运的是菲涅尔方程可以用Fresnel-Schlick近似法求得近似解：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213154235656.png"
+width="514"
+height="50"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213154235656_hu_d0e84767c0063773.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213154235656_hu_2cf8d1ffc597d772.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="1028"
+data-flex-basis="2467px"
+>&lt;/p>
+&lt;p>F0表示平面的基础反射率，它是利用所谓&lt;strong>折射指数&lt;/strong>(Indices of Refraction)或者说IOR计算得出的。然后正如你可以从球体表面看到的那样，我们越是朝球面掠角的方向上看（此时视线和表面法线的夹角接近90度）菲涅尔现象就越明显，反光就越强：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/fresnel.png"
+width="256"
+height="245"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/fresnel_hu_3d8ecaac66f472a6.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/fresnel_hu_b5f4ddc9b084a5ee.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="104"
+data-flex-basis="250px"
+>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// calculate F0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">Calculate_F0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half3&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.04&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">F0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">F0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">Function_F&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half3&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">F0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Calculate_F0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">F0&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">F0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">pow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">5.0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213155609967.png"
+width="1471"
+height="753"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213155609967_hu_347d7103ddb45b9f.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213155609967_hu_be7e61f4022a11bf.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;p>这里的kd是早先提到过的入射光线中&lt;strong>被折射&lt;/strong>部分的能量所占的比率，而ks是&lt;strong>被反射&lt;/strong>部分的比率。BRDF的左侧表示的是漫反射部分，它被称为Lambertian漫反射，这和我们之前在漫反射着色中使用的常数因子类似，用如下的公式来表示：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213151542786.png"
+width="175"
+height="63"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213151542786_hu_43256aef556aa0d4.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213151542786_hu_d23f98d8a4ada102.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="277"
+data-flex-basis="666px"
+>&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213173303675.png"
+width="1471"
+height="753"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213173303675_hu_3e5bf34094bae250.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213173303675_hu_7c7bac82cedde32b.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;p>BRDF的镜面反射部分要稍微更高级一些，它的形式如下所示：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213150548688.png"
+width="375"
+height="78"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213150548688_hu_9eebb099f67ccde0.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213150548688_hu_16e410b607eaf4af.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="480"
+data-flex-basis="1153px"
+>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// direct specular&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">smoothness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">smoothness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">functionD&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Function_D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// remap roughness to k value&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">kDirect&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">pow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">direct_functionG&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Function_G&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">kDirect&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">functionF&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Function_F&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">nominator&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">functionD&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">direct_functionG&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">functionF&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">demoninator&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">4.0&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotL&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">0.001&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">specular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nominator&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">demoninator&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213170817796.png"
+width="1471"
+height="753"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213170817796_hu_68dacaf824279205.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213170817796_hu_2b8d25a552c885ba.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;p>实时渲染中几乎只能使用Cook-Torrance BRDF模型。BRDF同时描绘入射光线和出射光线。严格上来说，Blinn-Phong光照模型也被认为是一个BRDF。然而由于Blinn-Phong模型并没有遵循能量守恒定律，因此它不被认为是基于物理的渲染。BRDF兼有漫反射和镜面反射两个部分：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213151433065.png"
+width="353"
+height="57"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213151433065_hu_1faa76c038defdc3.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213151433065_hu_bacdd90bfe16d66a.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="619"
+data-flex-basis="1486px"
+>&lt;/p>
+&lt;p>最终渲染方程：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213181607650.png"
+width="665"
+height="84"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213181607650_hu_d5b6ca39124a4170.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213181607650_hu_e54e165acc7c552.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="791"
+data-flex-basis="1900px"
+>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Direct BRDF = Lambertian + Direct Specular&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// direct specular&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">smoothness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">smoothness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">functionD&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Function_D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// remap roughness to k value&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">kDirect&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">pow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="mi">8&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">direct_functionG&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Function_G&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">kDirect&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">functionF&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Function_F&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ndotV&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">nominator&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">functionD&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">direct_functionG&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">functionF&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">demoninator&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">4.0&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotV&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotL&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">0.001&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">specular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nominator&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">demoninator&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Lambertian&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">kS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">functionF&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">kD&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kt">half3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">kS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">kD&lt;/span> &lt;span class="o">*=&lt;/span> &lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Render Equation&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">radiance&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">mainLightColor&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">mainLightAtten&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">Lo&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">kD&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">albedo&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="n">PI&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">kS&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">specular&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">radiance&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotL&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">directColor&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ambient&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">Lo&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213174223729.png"
+width="1471"
+height="754"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213174223729_hu_69c2b8a4a5863cae.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213174223729_hu_ac2d53dfc801327.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;h2 id="image-based-lighting">Image based lighting
+&lt;/h2>&lt;p>IBL 通常使用（取自现实世界或从3D场景生成的）环境立方体贴图 (Cubemap) ，我们可以将立方体贴图的每个像素视为光源，在渲染方程中直接使用它。这种方式可以有效地捕捉环境的全局光照和氛围，使物体&lt;strong>更好地融入&lt;/strong>其环境。&lt;/p>
+&lt;p>由于基于图像的光照算法会捕捉部分甚至全部的环境光照，通常认为它是一种更精确的环境光照输入格式，甚至也可以说是一种全局光照的粗略近似。基于此特性，IBL 对 PBR 很有意义，因为当我们将环境光纳入计算之后，物体在物理方面看起来会更加准确。&lt;/p>
+&lt;h2 id="间接diffuse">间接Diffuse
+&lt;/h2>&lt;p>仔细观察漫反射积分，我们发现漫反射兰伯特项是一个常数项（颜色 c 、折射率 kd 和 π 在整个积分是常数），不依赖于任何积分变量。基于此，我们可以将常数项移出漫反射积分：&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230215164305301.png"
+width="448"
+height="104"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230215164305301_hu_26c7498819e41948.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230215164305301_hu_a128946588c9d76.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="430"
+data-flex-basis="1033px"
+>&lt;/p>
+&lt;p>这边没有直接参考公式手写轮子，而是摘抄Unity在SphericalHarmonics.hlsl中的实现代码，原理相同，都是对环境光cubemap进行采样。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="n">real3&lt;/span> &lt;span class="n">SH_indirectDiffuse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">real3&lt;/span> &lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">real&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">real4&lt;/span> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">7&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHAr&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHAg&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHAb&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHBr&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">4&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHBg&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHBb&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">6&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">unity_SHC&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">real3&lt;/span> &lt;span class="n">color&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SampleSH9&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">SHCoefficients&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">normalWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">color&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213200733080.png"
+width="1471"
+height="754"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213200733080_hu_67e56eac50d2c140.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230213200733080_hu_36bb2067cb5e8abd.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="195"
+data-flex-basis="468px"
+>&lt;/p>
+&lt;hr>
+&lt;h2 id="间接specular">间接Specular
+&lt;/h2>&lt;p>间接高光部分的代码分别参考ImageBasedLighting.hlsl, EntityLighing.hlsl, GlobalIllumination.hlsl的代码实现，用了比较偷懒的方式而不是完全手写。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">IndirectSpecular&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">reflectVector&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">mip&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">PerceptualRoughnessToMipmapLevel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">encodedIrradiance&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kt">half4&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">SAMPLE_TEXTURECUBE_LOD&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">unity_SpecCube0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">samplerunity_SpecCube0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">reflectVector&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">mip&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">irradiance&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">DecodeHDREnvironment&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">encodedIrradiance&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">unity_SpecCube0_HDR&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">irradiance&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Indirect Function F&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">EnvironmentBRDFSpecular&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">half&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half3&lt;/span> &lt;span class="n">specular&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">fresnelTerm&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">half&lt;/span> &lt;span class="n">grazingTerm&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">surfaceReduction&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">1.0&lt;/span> &lt;span class="o">/&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">roughness&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kt">half3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">surfaceReduction&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">lerp&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">specular&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">grazingTerm&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">fresnelTerm&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230214143652274.png"
+width="1471"
+height="756"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230214143652274_hu_4ec7df733da3f281.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230214143652274_hu_56b1341e6d39e5b9.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="194"
+data-flex-basis="466px"
+>&lt;/p>
+&lt;hr>
+&lt;p>合并效果&lt;/p>
+&lt;p>最终结果 = 直接光漫反射 + 直接光镜面反射 + 间接光漫反射 + 间接光镜面反射&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="o">/&lt;/span> &lt;span class="n">Indirect&lt;/span> &lt;span class="n">BRDF&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Indirect diffuse&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">indirectDiffuse&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SH_indirectDiffuse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">indirectColor&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">indirectDiffuse&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Indirect Specualr&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">NoV&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">viewDirWS&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">fresnelTerm&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Pow4&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">NoV&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">oneMinusReflectivity&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">OneMinusReflectivityMetallic&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">metalness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">reflectivity&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kt">half&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">oneMinusReflectivity&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half&lt;/span> &lt;span class="n">grazingTerm&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reflectivity&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">smoothness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">indirectSpecular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">IndirectSpecular&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reflectVector&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">AO&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">half3&lt;/span> &lt;span class="n">brdfSpecular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Calculate_F0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">albedo&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">metalness&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">indirectColor&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">AO&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">indirectSpecular&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">EnvironmentBRDFSpecular&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">roughness&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">brdfSpecular&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">fresnelTerm&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">grazingTerm&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>最后添加脸部和手部的emission fake SSS效果，最终合成效果如下&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230214155911531.png"
+width="1471"
+height="757"
+srcset="https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230214155911531_hu_9e973a499de930e0.png 480w, https://kampter.github.io/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/image-20230214155911531_hu_6889cec5ae651d28.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="194"
+data-flex-basis="466px"
+>&lt;/p>
+&lt;hr>
+&lt;h2 id="参考">参考
+&lt;/h2>&lt;ol>
+&lt;li>&lt;a class="link" href="https://www.bilibili.com/read/cv7510082" target="_blank" rel="noopener"
+>URP管线的自学HLSL之路 第三十七篇 造一个PBR的轮子 - 哔哩哔哩 (bilibili.com)&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://blog.csdn.net/linjf520/article/details/122464903" target="_blank" rel="noopener"
+>Unity Shader - 搬砖日志 - URP PBR (抄作业篇，持续更新~)_Jave.Lin的博客-CSDN博客_unity urp的pbrshader&lt;/a>&lt;/li>
+&lt;li>[理论 - LearnOpenGL CN (learnopengl-cn.github.io)](&lt;a class="link" href="https://learnopengl-cn.github.io/07" target="_blank" rel="noopener"
+>https://learnopengl-cn.github.io/07&lt;/a> PBR/01 Theory/)&lt;/li>
+&lt;li>&lt;a class="link" href="https://zhuanlan.zhihu.com/p/371395846" target="_blank" rel="noopener"
+>URP管线PBR源码剖析（上） - 知乎 (zhihu.com)&lt;/a>&lt;/li>
+&lt;/ol></description></item></channel></rss>

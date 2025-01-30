@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Games 101 on Kampter</title><link>https://kampter.github.io/tags/games-101/</link><description>Recent content in Games 101 on Kampter</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 28 Sep 2022 17:09:57 +0000</lastBuildDate><atom:link href="https://kampter.github.io/tags/games-101/index.xml" rel="self" type="application/rss+xml"/><item><title>Games 101 - PBR原理</title><link>https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/</link><pubDate>Wed, 28 Sep 2022 17:09:57 +0000</pubDate><guid>https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/</guid><description>&lt;p>前言：只记录自己需要的内容&lt;/p>
+&lt;hr>
+&lt;h2 id="辐射度量学">辐射度量学
+&lt;/h2>&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/radiant.png" width="50%">
+&lt;/figure>
+&lt;h3 id="radiant-energy">Radiant energy
+&lt;/h3>&lt;p>能量，单位：J（Joule焦耳）&lt;/p>
+&lt;h3 id="radiant-flux">Radiant Flux
+&lt;/h3>&lt;p>（&lt;strong>单位时间&lt;/strong>能量 → 功率）单位：W（Watt），lm（lumen流明）&lt;/p>
+&lt;h3 id="intensity">Intensity
+&lt;/h3>$$
+I(\omega) = \frac{\mathrm{d} \Phi}{\mathrm{d} \omega}
+$$&lt;ul>
+&lt;li>
+&lt;p>立体角&lt;/p>
+&lt;ul>
+&lt;li>面积/半径^2，&lt;/li>
+&lt;/ul>
+$$
+\Omega=\frac{A}{r^{2}}
+$$&lt;ul>
+&lt;li>单位：sr, steradians&lt;/li>
+&lt;/ul>
+$$
+\mathrm{d} \omega=\frac{\mathrm{d} A}{r^{2}}=\sin \theta \mathrm{d} \theta \mathrm{d} \phi
+$$&lt;/li>
+&lt;li>
+&lt;p>方向性：用 w来表示方向&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="irradiance">Irradiance
+&lt;/h3>$$
+E(\mathbf{x}) \equiv \frac{\mathrm{d} \Phi(\mathbf{x})}{\mathrm{d} A}
+$$&lt;p>
+单位：W/m^2 | lm/m^2 = lux&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222175520499.png" width="20%">
+&lt;/figure>
+&lt;p>irradiance解释衰减, 随着半径增大衰减越明显&lt;/p>
+&lt;h3 id="radiance">Radiance
+&lt;/h3>$$
+L(\mathrm{p}, \omega) \equiv \frac{\mathrm{d}^{2} \Phi(\mathrm{p}, \omega)}{\mathrm{d} \omega \mathrm{d} A \cos \theta}
+$$&lt;p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222175312913.png" width="50%">
+&lt;/figure>
+&lt;/p>
+&lt;p>非垂直平面需要根据 θ 夹角计算&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222174348091.png" width="50%">
+&lt;/figure>
+&lt;p>radiance 与intensity 和 irradiance 结合对比&lt;/p>
+&lt;p>Irradiance和Radiance之间的区别就在于是否有方向性&lt;/p>
+&lt;ul>
+&lt;li>Irradiance: power received by area dA 四面八方的光线积分起来&lt;/li>
+&lt;li>Radiance: power received by area dA from “direction” dω&lt;/li>
+&lt;/ul>
+$$
+\begin{aligned} d E(\mathrm{p}, \omega) &amp;=L_{i}(\mathrm{p}, \omega) \cos \theta \mathrm{d} \omega \\ E(\mathrm{p}) &amp;=\int_{H^{2}} L_{i}(\mathrm{p}, \omega) \cos \theta \mathrm{d} \omega \end{aligned}
+$$&lt;h2 id="bidirectional-reflectance-distribution-function-brdf-双向反射分布函数">Bidirectional Reflectance Distribution Function (BRDF) 双向反射分布函数
+&lt;/h2>&lt;h3 id="理解">理解
+&lt;/h3>&lt;p>反射的理解：光线打到某个点，（被吸收了）然后反弹（发出）到其他地方&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222181257182.png" width="50%">
+&lt;/figure>
+&lt;p>某个点从某个方向接受/向某个方向发射光线能量：radiance&lt;/p>
+&lt;ul>
+&lt;li>Differential irradiance incoming:&lt;/li>
+&lt;/ul>
+$$
+d E\left(\omega_{i}\right)=L\left(\omega_{i}\right) \cos \theta_{i} d \omega_{i}
+$$&lt;ul>
+&lt;li>Differential radiance exiting:&lt;/li>
+&lt;/ul>
+$$
+d L_{r}\left(\omega_{r}\right)
+$$&lt;p>通俗理解：这个微小面积接受的能量计算后，再分配到各个方向上&lt;/p>
+&lt;h3 id="the-reflection-equation-反射方程">The Reflection Equation 反射方程
+&lt;/h3>&lt;ul>
+&lt;li>针对一个输出源（着色点），积分所有方向输入源（光照）的BRDF，获得最后的输出&lt;/li>
+&lt;/ul>
+$$
+L_{r}\left(\mathrm{p}, \omega_{r}\right)=\int_{H^{2}} f_{r}\left(\mathrm{p}, \omega_{i} \rightarrow \omega_{r}\right) L_{i}\left(\mathrm{p}, \omega_{i}\right) \cos \theta_{i} \mathrm{d} \omega_{i}
+$$&lt;h2 id="the-rendering-equation-渲染方程">The Rendering Equation 渲染方程
+&lt;/h2>$$
+L_{o}\left(p, \omega_{o}\right)=L_{e}\left(p, \omega_{o}\right)+\int_{\Omega^{+}} L_{i}\left(p, \omega_{i}\right) f_{r}\left(p, \omega_{i}, \omega_{o}\right)\left(n \cdot \omega_{i}\right) \mathrm{d} \omega_{i}
+$$&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222182311587.png" width="50%">
+&lt;/figure>
+&lt;p>渲染方程考虑多个点光源：根据w方向加起来，同时考虑其他物体反射的光源。&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222182448860.png" width="50%">
+&lt;/figure>
+&lt;p>一个神奇的抽象化理解：&lt;/p>
+&lt;ul>
+&lt;li>光栅化的着色过程主要是直接光照（间接光照计算非常复杂）&lt;/li>
+&lt;li>全局光照：直接和间接光照的集合
+&lt;ul>
+&lt;li>会收敛到一个亮度&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="brdf-材质">BRDF 材质
+&lt;/h3>&lt;p>以前只有Blinn Phong的时候，通过非物理的方式模拟出各种材质。&lt;/p>
+&lt;p>Material == BRDF 决定光如何被反射&lt;/p>
+&lt;h4 id="diffuse--lambertain-material">Diffuse / Lambertain Material
+&lt;/h4>&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222183648389.png" width="50%">
+&lt;/figure>
+&lt;ul>
+&lt;li>能量守恒：进出的irradiance相同（总量）&lt;/li>
+&lt;li>漫反射：出的radiance均匀→ $f_r = c$ （常量）&lt;/li>
+&lt;li>假设入射光和出射光都是均匀的→ $L_i = L_o$&lt;/li>
+&lt;li>ρ: albedo(反射率, RGB)&lt;/li>
+&lt;/ul>
+&lt;h4 id="glossy-materialbrdf">Glossy Material（BRDF）
+&lt;/h4>&lt;h4 id="ideal-reflective--refractive-material-bsdf--">Ideal reflective / refractive material (BSDF * )
+&lt;/h4>&lt;p>BSDF（散射） = BRDF（反射） + BTDF（折射）&lt;/p>
+&lt;h4 id="isotropic--anisotropic-materials-brdfs">Isotropic / Anisotropic Materials (BRDFs)
+&lt;/h4>&lt;p>各向异性BRDF&lt;/p>
+&lt;h4 id="fresnel-reflection--term-菲涅耳项">Fresnel Reflection / Term （菲涅耳项）
+&lt;/h4>&lt;p>和normal法线方向越接近，越少光被反射&lt;/p>
+&lt;ul>
+&lt;li>近似：Schlick’s approximation&lt;/li>
+&lt;/ul>
+$$
+\begin{aligned} R(\theta) &amp;=R_{0}+\left(1-R_{0}\right)(1-\cos \theta)^{5} \\ R_{0} &amp;=\left(\frac{n_{1}-n_{2}}{n_{1}+n_{2}}\right)^{2} \end{aligned}
+$$&lt;h3 id="microfacet-material-微表面材质">Microfacet Material 微表面材质
+&lt;/h3>&lt;p>从足够远的地方看过去，无限接近镜面反射。但是不断拉近，表面会变得凹凸不平。&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222184902536.png" width="50%">
+&lt;/figure>
+$$
+f(\mathbf{i}, \mathbf{o})=\frac{\mathbf{F}(\mathbf{i}, \mathbf{h}) \mathbf{G}(\mathbf{i}, \mathbf{o}, \mathbf{h}) \mathbf{D}(\mathbf{h})}{4(\mathbf{n}, \mathbf{i})(\mathbf{n}, \mathbf{o})}
+$$&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-pbr%E5%8E%9F%E7%90%86/image-20230222185813296.png" width="50%">
+&lt;/figure>
+&lt;ul>
+&lt;li>Fresnel term 表示菲尼尔效果&lt;/li>
+&lt;li>shadowing-masking term 表示足够远的地方光滑但是细微的地方实际是凹凸不平产生遮挡阴影效果&lt;/li>
+&lt;li>distribution of normals 表示凹凸不平的法线方向（细小平面的方向）&lt;/li>
+&lt;/ul>
+&lt;p>&amp;mdash; 2023.2.10 更新 &amp;mdash;&lt;/p>
+&lt;p>&lt;a class="link" href="http://localhost:1313/p/%E5%B0%9D%E8%AF%95%E5%9C%A8urp%E4%B8%8B%E6%89%8B%E5%86%99-pbr-shader/" target="_blank" rel="noopener"
+>尝试在URP中手写PBR shader&lt;/a>&lt;/p></description></item><item><title>Games 101 - Shading</title><link>https://kampter.github.io/p/games-101-shading/</link><pubDate>Sun, 11 Sep 2022 16:31:55 +0000</pubDate><guid>https://kampter.github.io/p/games-101-shading/</guid><description>&lt;p>前言：只记录自己需要的内容&lt;/p>
+&lt;hr>
+&lt;h2 id="深度测试-z-buffer-or-depth-buffer">深度测试 （Z buffer or Depth buffer）
+&lt;/h2>&lt;figure>&lt;img src="image-20230221163720934.png" width="50%">
+&lt;/figure>
+&lt;p>把深度视为无限远，然后遍历每一个山脚行，再遍历每一个三角形的光栅化过程，同时记录光栅化的深度信息。如果光栅化后当前像素点的深度信息小于之前记录过的信息，则替换原本的像素点信息。&lt;/p>
+&lt;figure>&lt;img src="Z-buffer.png" width="50%">
+&lt;/figure>
+&lt;p>Z-buffer：对每个像素多存一个深度&lt;/p>
+&lt;p>复杂度：O(n) for n triangles 并不是排序，而是只要最值&lt;/p>
+&lt;p>需要保证三角形进入顺序和结果无关&lt;/p>
+&lt;p>无法处理透明物体&lt;/p>
+&lt;h2 id="blinn-phong-reflectance-model-光照模型-着色模型">Blinn-Phong Reflectance Model 光照模型 着色模型
+&lt;/h2>&lt;h3 id="diffuse">Diffuse
+&lt;/h3>&lt;ul>
+&lt;li>
+$$
+L_{d}=k_{d}\left(I / r^{2}\right) \max (0, \mathbf{n} \cdot \mathbf{l})
+$$&lt;/li>
+&lt;li>
+&lt;p>可以简化为：&lt;/p>
+&lt;p>K_d 漫反射系数&lt;/p>
+&lt;p>I/r2 衰减后的灯光，LightColor * AttenuationLight&lt;/p>
+&lt;p>Max(0, normal dot LightDirction)&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="specular">Specular
+&lt;/h3>&lt;figure>&lt;img src="specular.png" width="50%">
+&lt;/figure>
+&lt;p>p一般100～200，控制高光大小&lt;/p>
+&lt;h3 id="ambient">Ambient
+&lt;/h3>$$
+L_{a}=k_{a} I_{a}
+$$&lt;p>一般可以认为ambient为一个常数，要计算真实光照要考虑GI&lt;/p>
+&lt;h3 id="combine">Combine
+&lt;/h3>$$
+\begin{aligned} L &amp;=L_{a}+L_{d}+L_{s} \\ &amp;=k_{a} I_{a}+k_{d}\left(I / r^{2}\right) \max (0, \mathbf{n} \cdot \mathbf{l})+k_{s}\left(I / r^{2}\right) \max (0, \mathbf{n} \cdot \mathbf{h})^{p} \end{aligned}
+$$&lt;p>&amp;mdash; 2022.12.20 更新 &amp;mdash;&lt;/p>
+&lt;p>URP实现&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;span class="lnt">63
+&lt;/span>&lt;span class="lnt">64
+&lt;/span>&lt;span class="lnt">65
+&lt;/span>&lt;span class="lnt">66
+&lt;/span>&lt;span class="lnt">67
+&lt;/span>&lt;span class="lnt">68
+&lt;/span>&lt;span class="lnt">69
+&lt;/span>&lt;span class="lnt">70
+&lt;/span>&lt;span class="lnt">71
+&lt;/span>&lt;span class="lnt">72
+&lt;/span>&lt;span class="lnt">73
+&lt;/span>&lt;span class="lnt">74
+&lt;/span>&lt;span class="lnt">75
+&lt;/span>&lt;span class="lnt">76
+&lt;/span>&lt;span class="lnt">77
+&lt;/span>&lt;span class="lnt">78
+&lt;/span>&lt;span class="lnt">79
+&lt;/span>&lt;span class="lnt">80
+&lt;/span>&lt;span class="lnt">81
+&lt;/span>&lt;span class="lnt">82
+&lt;/span>&lt;span class="lnt">83
+&lt;/span>&lt;span class="lnt">84
+&lt;/span>&lt;span class="lnt">85
+&lt;/span>&lt;span class="lnt">86
+&lt;/span>&lt;span class="lnt">87
+&lt;/span>&lt;span class="lnt">88
+&lt;/span>&lt;span class="lnt">89
+&lt;/span>&lt;span class="lnt">90
+&lt;/span>&lt;span class="lnt">91
+&lt;/span>&lt;span class="lnt">92
+&lt;/span>&lt;span class="lnt">93
+&lt;/span>&lt;span class="lnt">94
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Shader&lt;/span> &lt;span class="s">&amp;#34;Custom/Blinn-Phong&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Properties&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_BaseColor&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Base Color&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Color&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_BaseMap&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Main Texture&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="n">D&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;white&amp;#34;&lt;/span>&lt;span class="p">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_SpecColor&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Specular Color&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Color&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_Smoothness&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Smoothness&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">8&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">256&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">20&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SubShader&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Tags&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;RenderType&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;Opaque&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;RenderPipeline&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;UniversalRenderPipeline&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;LightMode&amp;#34;&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;UniversalForward&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;ShaderModel&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;4.5&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">LOD&lt;/span> &lt;span class="mi">100&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Pass&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">HLSLPROGRAM&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">vertex&lt;/span> &lt;span class="n">vert&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">fragment&lt;/span> &lt;span class="n">frag&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">include&lt;/span> &lt;span class="s">&amp;#34;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">include&lt;/span> &lt;span class="s">&amp;#34;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">struct&lt;/span> &lt;span class="n">Attributes&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">positionOS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">POSITION&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">normal&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">NORMAL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">tangetOS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TANGENT&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">uv&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">struct&lt;/span> &lt;span class="n">Varyings&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">positionCS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">SV_POSITION&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">positionWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">POSITION_WS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half2&lt;/span> &lt;span class="n">uv&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">TEXCOORD0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">normalWS&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="n">NORMAL_WS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_BaseMap&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SAMPLER&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sampler_BaseMap&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CBUFFER_START&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">UnityPerMaterial&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_BaseMap_ST&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_BaseColor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">_SpecColor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">_Smoothness&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CBUFFER_END&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Varyings&lt;/span> &lt;span class="n">vert&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Attributes&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">const&lt;/span> &lt;span class="n">VertexPositionInputs&lt;/span> &lt;span class="n">vertex_position_inputs&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetVertexPositionInputs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionOS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">const&lt;/span> &lt;span class="n">VertexNormalInputs&lt;/span> &lt;span class="n">vertex_normal_inputs&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetVertexNormalInputs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normal&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Varyings&lt;/span> &lt;span class="n">OUT&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vertex_position_inputs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionCS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vertex_position_inputs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionCS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">TRANSFORM_TEX&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_BaseMap&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">OUT&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">vertex_normal_inputs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">OUT&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">frag&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Varyings&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="nd">SV_Target&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Light&lt;/span> &lt;span class="n">mainLight&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">GetMainLight&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">lightColor&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">mainLight&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">color&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">lightDir&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">normalize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">mainLight&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">direction&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">lightAtten&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">mainLight&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">distanceAttenuation&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// diffuse&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">albedo&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">SAMPLE_TEXTURE2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_BaseMap&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sampler_BaseMap&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">uv&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">_BaseColor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">kd&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">albedo&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">light&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">lightColor&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">lightAtten&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">ndotL&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">lightDir&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">diffuse&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">kd&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">light&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">ndotL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// specular&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">ks&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">kd&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">viewDirWS&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">normalize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">GetCameraPositionWS&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">positionWS&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">halfDir&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">normalize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">viewDirWS&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">lightDir&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half&lt;/span> &lt;span class="n">nDotH&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="nb">max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mo">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">dot&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">halfDir&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IN&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">normalWS&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">specular&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ks&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">light&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">pow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nDotH&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">_Smoothness&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="nb">saturate&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_SpecColor&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Ambient&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half3&lt;/span> &lt;span class="n">ambient&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mf">0.1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Combine&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">finalColor&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="kt">half4&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ambient&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">diffuse&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">specular&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mf">1.0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">finalColor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ENDHLSL&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>效果如下&lt;/p>
+&lt;figure>&lt;img src="image-20230222162300339.png" width="50%">
+&lt;/figure>
+&lt;h2 id="real-time-rendering">Real Time Rendering
+&lt;/h2>&lt;figure>&lt;img src="Real_Time_Rendering_Pipeline.png" width="50%">
+&lt;/figure>
+&lt;ol>
+&lt;li>
+&lt;p>应用阶段：CPU传递数据给GPU（包括纹理，材质，着色器，是否Culling）。Drawcall 即CPU每调用一次GPU就计算一次Drawcall&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>几何阶段：顶点着色器，几何着色器，曲面细分着色器，可编程。几何阶段还进行投影，裁切和屏幕映射等操作。&lt;/p>
+&lt;p>几何着色器常见应用：法线可视化，绘制图形（增加删除点）。曲面细分着色器常见应用: displacement 置换&lt;/p>
+&lt;p>投影：观察空间转换到&lt;strong>裁剪空间&lt;/strong>（又被称为齐次裁剪空间）裁切：对透视裁剪空间来说，GPU需要对裁剪空间中的顶点执行齐次除法（其实就是将齐次坐标系中的w分量除x、y、z分量），得到顶点的&lt;strong>归一化的设备坐标（Normalized Device Coordinates, NDC&lt;/strong>）屏幕映射：最终转化为&lt;strong>屏幕空间&lt;/strong>，Z分量即Z-buffer&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>光栅化阶段：包括图元组装（三个点组成一个三角形），三角形遍历（参考光栅化笔记），片元着色器，逐片元操作包括&lt;strong>裁剪测试（Scissor Test）&lt;/strong>、&lt;strong>透明度测试（Alpha Test）&lt;/strong>、&lt;strong>模板测试（Stencil Test）&lt;strong>以及&lt;/strong>深度测试（Depth Test）&lt;/strong>，可自定义。&lt;/p>
+&lt;p>通过测试的片元可以进入合并，考虑是否颜色混合 （alpha blend）在经过上面的层层测试后，片元颜色就会被送到颜色缓冲区。GPU会使用&lt;strong>双重缓冲（Double Buffering）&lt;strong>的策略，即屏幕上显示&lt;/strong>前置缓冲（Front Buffer）&lt;/strong>，而渲染好的颜色先被送入&lt;strong>后置缓冲（Back Buffer）&lt;/strong>，再替换前置缓冲，以此避免在屏幕上显示正在光栅化的图元。&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;h2 id="纹理映射">纹理映射
+&lt;/h2>&lt;p>纹理映射即漫反射系数k_d&lt;/p>
+&lt;figure>&lt;img src="image-20230222160942261.png" width="50%">
+&lt;/figure>
+&lt;p>每一个3D模型的表面展开都是1个2d平面，2d平面的x y坐标用来查询纹理的uv坐标&lt;/p>
+$$
+\begin{aligned} \alpha &amp;=\frac{-\left(x-x_{B}\right)\left(y_{C}-y_{B}\right)+\left(y-y_{B}\right)\left(x_{C}-x_{B}\right)}{-\left(x_{A}-x_{B}\right)\left(y_{C}-y_{B}\right)+\left(y_{A}-y_{B}\right)\left(x_{C}-x_{B}\right)} \\
+\beta &amp;=\frac{-\left(x-x_{C}\right)\left(y_{A}-y_{C}\right)+\left(y-y_{C}\right)\left(x_{A}-x_{C}\right)}{-\left(x_{B}-x_{C}\right)\left(y_{A}-y_{C}\right)+\left(y_{B}-y_{C}\right)\left(x_{A}-x_{C}\right)} \\
+\gamma &amp;=1-\alpha-\beta \end{aligned}
+$$&lt;p>
+投影前后的重心坐标可能会变化，所以需要在对应时间计算对应的重心坐标来做插值，不能随意复用！&lt;/p>
+&lt;h3 id="纹素">纹素
+&lt;/h3>&lt;p>每张纹理贴图的一个像素点。&lt;/p>
+&lt;p>如果纹素太小，把多个pixel 映射同一个纹素&lt;/p>
+&lt;ul>
+&lt;li>解决：
+&lt;ul>
+&lt;li>Nearest&lt;/li>
+&lt;li>Bilinear
+&lt;ul>
+&lt;li>Bilinear 插值 lerp&lt;/li>
+&lt;li>水平+竖直插值→双线性插值&lt;/li>
+&lt;li>最近的四个点插值&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Bicubic 双向三次插值
+&lt;ul>
+&lt;li>周围16个点做三次插值&lt;/li>
+&lt;li>运算量更大，结果更好&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>如果纹素太大，会产生摩尔纹&lt;/p>
+&lt;figure>&lt;img src="image-20230222161014635.png" width="50%">
+&lt;/figure>
+&lt;p>用Mipmap降低纹理精度&lt;/p>
+&lt;figure>&lt;img src="image-20230222161030909.png" width="50%">
+&lt;/figure>
+&lt;p>各向异性过滤&lt;/p>
+&lt;p>把贴图的xy方向分别使用不同的mipmap，比如1024x1024的贴图可以变成128 x 256或者64 x 128&lt;/p>
+&lt;ul>
+&lt;li>怎么知道层数D？约为相邻pixel的映射uv之间的距离取2的对数&lt;/li>
+&lt;li>如果计算出来需要的D是整数，就很方便，直接查找&lt;/li>
+&lt;li>如果计算出来需要的D不是整数→Trilinear Interpolation三线性插值&lt;/li>
+&lt;/ul>
+&lt;h2 id="参考">参考
+&lt;/h2>&lt;ol>
+&lt;li>&lt;a class="link" href="https://zhuanlan.zhihu.com/p/137780634" target="_blank" rel="noopener"
+>https://zhuanlan.zhihu.com/p/137780634&lt;/a>&lt;/li>
+&lt;/ol></description></item><item><title>Games 101 - 光栅化</title><link>https://kampter.github.io/p/games-101-%E5%85%89%E6%A0%85%E5%8C%96/</link><pubDate>Fri, 02 Sep 2022 15:48:07 +0000</pubDate><guid>https://kampter.github.io/p/games-101-%E5%85%89%E6%A0%85%E5%8C%96/</guid><description>&lt;p>前言：只记录自己需要的内容&lt;/p>
+&lt;hr>
+&lt;h2 id="光栅化">光栅化
+&lt;/h2>&lt;p>屏幕空间 从（0，0）到（width, height）&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/image-20230221155258881.png"
+loading="lazy"
+alt="image-20230221155258881"
+>&lt;/p>
+&lt;p>光栅化的过程即采样过程，来判断屏幕上的像素点是否在三角形里面&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/image-20230221160755587.png"
+loading="lazy"
+alt="image-20230221160755587"
+>&lt;/p>
+&lt;p>采样的缺点：以点代面，有失偏颇 → Aliasing 走样，表现为锯齿&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/image-20230221161051955.png"
+loading="lazy"
+alt="image-20230221161051955"
+>&lt;/p>
+&lt;p>引入傅里叶变换，采样信息可以分解成函数表达&lt;/p>
+&lt;figure>&lt;img src="image-20230221161257739.png" width="50%">
+&lt;/figure>
+&lt;p>高频信息：简单来说就是outline边界，边界变化带来巨大的图像效果变化&lt;/p>
+&lt;figure>&lt;img src="image-20230221161617496.png" width="50%">
+&lt;/figure>
+&lt;p>只保留高频信息：表现为边缘部分&lt;/p>
+&lt;figure>&lt;img src="image-20230221161717274.png" width="50%">
+&lt;/figure>
+&lt;p>只保留低频信息：表现为画面主体&lt;/p>
+&lt;figure>&lt;img src="image-20230221161734454.png" width="50%">
+&lt;/figure>
+&lt;h2 id="走样">走样
+&lt;/h2>&lt;p>走样就是采样的中出现重复或者没有采集到关键信息 （图中蓝色和黑色采样点相同，但是实际差距明显）&lt;/p>
+&lt;figure>&lt;img src="image-20230221162312337.png" width="50%">
+&lt;/figure>
+&lt;p>减少Aliasing Error 的方法&lt;/p>
+&lt;ol>
+&lt;li>增加采样率&lt;/li>
+&lt;li>Antialiasing 先模糊（砍掉高频信号也就是画面边缘容易走样的位置）再采样&lt;/li>
+&lt;li>MSAA 超采样 （增加单像素点内的采样点）&lt;/li>
+&lt;li>FXAA 图像后期处理找到边界部分（走样的部分）替换成不走样的图像&lt;/li>
+&lt;li>TAA 更立体的在相邻帧采样同一像素的不同位置&lt;/li>
+&lt;/ol></description></item><item><title>Games 101 - 线代和变换</title><link>https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/</link><pubDate>Sun, 21 Aug 2022 14:17:21 +0000</pubDate><guid>https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/</guid><description>&lt;p>前言：只记录自己需要的内容&lt;/p>
+&lt;hr>
+&lt;h2 id="线代">线代
+&lt;/h2>&lt;h3 id="判断点是否在三角形内的方法1">判断点是否在三角形内的方法1
+&lt;/h3>&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221133120210.png" width="50%">
+&lt;/figure>
+&lt;p>按照逆时针找到ab，bc，ca向量，当同时满足cross(ab * ap) &amp;gt; 0 &amp;amp;&amp;amp; cross(bc * bp) &amp;gt; 0 &amp;amp;&amp;amp; cross (ca * cp) &amp;gt; 0 时点在三角形内，如果有一个结果为0 点在这条边上，有一个小于0在三角形外。换种思路就是如果点在三角形内测，三次判断点都在封闭线段的左侧，即点在图形内。&lt;/p>
+&lt;h3 id="判断点是否在三角形内的方法2">判断点是否在三角形内的方法2
+&lt;/h3>&lt;p>&lt;img src="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221133422396.png"
+width="287"
+height="263"
+srcset="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221133422396_hu_b356736611fd0a0.png 480w, https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221133422396_hu_4b86d4a4ac87c8ef.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="109"
+data-flex-basis="261px"
+>&lt;/p>
+&lt;p>从远处发射一条光线，到无限远，如果与多边形交点为偶数，在图形外，否则在图形内。遍历多边形每一条边与光线相交，如果交点在这条边上，交点数 +1。&lt;/p>
+&lt;h2 id="变换">变换
+&lt;/h2>&lt;h3 id="齐次空间--空间变化增加一个维度实现transformation-图例为二维变换三位变化同理增加一个维度到四维">齐次空间: 空间变化增加一个维度实现Transformation （图例为二维变换，三位变化同理增加一个维度到四维）
+&lt;/h3>&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221151903102.png" width="50%">
+&lt;/figure>
+&lt;p>这样带来的好处是在一个矩阵就能完成Transformation操作 （Affine map是原本Transformation 需要两个矩阵操作）&lt;/p>
+&lt;figure>&lt;img src="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221152038483.png" width="50%">
+&lt;/figure>
+&lt;h3 id="模型空间以模型为世界原点的坐标系local">模型空间：以模型为世界原点的坐标系（Local）
+&lt;/h3>&lt;p>Model transformation&lt;/p>
+&lt;h3 id="世界空间以世界坐标系000为原点将模型摆放在世界global坐标系中">世界空间：以世界坐标系（0，0，0）为原点，将模型摆放在世界Global坐标系中
+&lt;/h3>&lt;p>View transformation&lt;/p>
+&lt;h3 id="相机观察空间我们看到的画面由摄像机捕捉摄像机参数决定了我们在屏幕上看到的东西这一步可以将世界坐标系转换到摄像机坐标系">相机/观察空间：我们看到的画面由摄像机捕捉，摄像机参数决定了我们在屏幕上看到的东西，这一步可以将世界坐标系转换到摄像机坐标系。
+&lt;/h3>&lt;p>Projection transformation&lt;/p>
+&lt;p>正交投影和透视投影：这也是Zbuffer储存深度信息的由来。投影变化包括从view变化到正交投影再变化到透视投影才输出至viewport视口显示再屏幕上。&lt;/p>
+&lt;p>投影的取值范围为[-1, 1]&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221153642237.png"
+width="492"
+height="265"
+srcset="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221153642237_hu_e9ecabc2e5cf6fea.png 480w, https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/image-20230221153642237_hu_f624443c28cf1fc8.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="185"
+data-flex-basis="445px"
+>&lt;/p>
+&lt;p>&amp;mdash; 2023.02.04 更新 &amp;mdash;&lt;/p>
+&lt;p>额外帮助理解的图片：空间变化的过程&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/v2-0aacc4803212a11f43964d7f34824785_r-1679559136404-7.jpg"
+width="1676"
+height="822"
+srcset="https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/v2-0aacc4803212a11f43964d7f34824785_r-1679559136404-7_hu_18b63edf07635831.jpg 480w, https://kampter.github.io/p/games-101-%E7%BA%BF%E4%BB%A3%E5%92%8C%E5%8F%98%E6%8D%A2/v2-0aacc4803212a11f43964d7f34824785_r-1679559136404-7_hu_925849ebba25cc9d.jpg 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="203"
+data-flex-basis="489px"
+>&lt;/p>
+&lt;p>以及在unity中实现空间变换部分的代码及说明&lt;/p>
+&lt;p>HCS齐次裁剪空间的xy坐标范围在[-w, w]之间&lt;/p>
+&lt;p>而NDC空间，是把视锥放映射到 -1 到 1的正方体中，也就是把HCS空间投影到[-1, 1]的范围内&lt;/p>
+&lt;h2 id="参考">参考
+&lt;/h2>&lt;ol>
+&lt;li>&lt;a class="link" href="https://zhuanlan.zhihu.com/p/552098339" target="_blank" rel="noopener"
+>【04】Unity URP 卡通渲染 原神角色渲染记录-Depth-Based Effect: 7Spaces + 屏幕空间等距深度边缘光Rim Light - 知乎 (zhihu.com)&lt;/a>&lt;/li>
+&lt;/ol></description></item></channel></rss>

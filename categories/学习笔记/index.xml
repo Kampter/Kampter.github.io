@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>学习笔记 on Kampter</title><link>https://kampter.github.io/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</link><description>Recent content in 学习笔记 on Kampter</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Mon, 20 Mar 2023 10:47:50 +0000</lastBuildDate><atom:link href="https://kampter.github.io/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.xml" rel="self" type="application/rss+xml"/><item><title>URP 14 RenderFeature 使用方式</title><link>https://kampter.github.io/p/urp-14-renderfeature-%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F/</link><pubDate>Mon, 20 Mar 2023 10:47:50 +0000</pubDate><guid>https://kampter.github.io/p/urp-14-renderfeature-%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F/</guid><description>&lt;h2 id="urp-14">URP 14
+&lt;/h2>&lt;p>&lt;a class="link" href="https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@14.0/manual/upgrade-guide-2022-2.html" target="_blank" rel="noopener"
+>URP 14&lt;/a> 对应Unity 2022.2对于2021lts版本的URP 12中后处理的API有些许改变，需要参考官方文档的改变。而其中最大的改变来自于RTHandle的引入。&lt;/p>
+&lt;p>以一个DesaturateFeature为例。在DesaturateFeature.cs中改变比较大的是加入一个SetupRenderPasses来帮助创建Materail和传递参数，而不是传统的写法在Create()中。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-C#" data-lang="C#">&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">SetupRenderPasses&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ScriptableRenderer&lt;/span> &lt;span class="n">renderer&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">RenderingData&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Material&lt;/span> &lt;span class="n">material&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">CoreUtils&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateEngineMaterial&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">shader&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desaturateRenderPass&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ConfigureInput&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ScriptableRenderPassInput&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Color&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desaturateRenderPass&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Setup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">material&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;DesaturatedRenderPass&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">renderingData&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后写内部的DesaturateRenderPass 类。&lt;/p>
+&lt;ul>
+&lt;li>变化一是RenderTargetHandle.Init(&amp;quot;_CustomPassHandle&amp;quot;)方式的改变为&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-C#" data-lang="C#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">colorCopyDescriptor&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraTargetDescriptor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorCopyDescriptor&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">depthBufferBits&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">DepthBits&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">None&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">RenderingUtils&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReAllocateIfNeeded&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">ref&lt;/span> &lt;span class="n">m_CopiedColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorCopyDescriptor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;_FullscreenPassColorCopy&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ul>
+&lt;li>
+&lt;p>变化二：command buffer的GetTemporaryRT和ReleaseTemporaryRT被弃用。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>官方推荐使用Blitter.BlitCameraTexture方法把原始的RT添加我们自定义的material然后再传递回去。代码实现如下&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-C#" data-lang="C#">&lt;span class="line">&lt;span class="cl">&lt;span class="n">CommandBuffer&lt;/span> &lt;span class="n">cmd&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">CommandBufferPool&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Get&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">cameraData&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraData&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span> &lt;span class="n">ProfilingScope&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">profilingSampler&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">source&lt;/span> &lt;span class="p">=&lt;/span>&lt;span class="n">cameraData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">renderer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraColorTargetHandle&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">passMaterial&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SetTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">m_BlitTextureShaderID&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Blitter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BlitCameraTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">passMaterial&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Blitter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BlitCameraTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">context&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ExecuteCommandBuffer&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">cmd&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Clear&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>参考官方的案例，完整写一个ColorTint的实例&lt;/p>
+&lt;p>Shader的部分可以十分简化，Vert在Blit.hlsl中官方已经帮忙处理好，这里只需要写frag的逻辑部分，太香了。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Shader&lt;/span> &lt;span class="s">&amp;#34;ColorBlit&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">SubShader&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Tags&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s">&amp;#34;RenderType&amp;#34;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">&amp;#34;Opaque&amp;#34;&lt;/span> &lt;span class="s">&amp;#34;RenderPipeline&amp;#34;&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;UniversalPipeline&amp;#34;&lt;/span>&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">LOD&lt;/span> &lt;span class="mi">100&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ZWrite&lt;/span> &lt;span class="n">Off&lt;/span> &lt;span class="n">Cull&lt;/span> &lt;span class="n">Off&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Pass&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Name&lt;/span> &lt;span class="s">&amp;#34;ColorTintPass&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">HLSLPROGRAM&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">include&lt;/span> &lt;span class="s">&amp;#34;Packages/com.unity.render-pipelines.core/Runtime/Utilities/BlitColorAndDepth.hlsl&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">vertex&lt;/span> &lt;span class="n">Vert&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">#&lt;/span>&lt;span class="n">pragma&lt;/span> &lt;span class="n">fragment&lt;/span> &lt;span class="n">frag&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">float4&lt;/span> &lt;span class="n">_ColorTint&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">frag&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Varyings&lt;/span> &lt;span class="n">input&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">:&lt;/span> &lt;span class="nd">SV_Target&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">half4&lt;/span> &lt;span class="n">color&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">FragColorAndDepth&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">input&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">color&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">color&lt;/span> &lt;span class="o">*=&lt;/span> &lt;span class="n">_ColorTint&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">color&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ENDHLSL&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>完整的ColorTintRenderFeature部分。思路如下，用一个colorTintSettings做UI接住全部的设置内容。重写一个SetupRenderPasses来传递以前在Create()中传递的内容，创建就好好创建，设置参数就好好设置参数，嗯恒河里。RenderFeature class基本就这样没什么可以说的，与urp 12就这么点区别。哦对，在传递相机的部分，用renderer.cameraColorTargetHandle而不是cameraColorTarget。换句话说，unity 换了RThandle这个API，跟着换就行，虽然老的也能用，但是Unity官方论坛的讨论结果是未来RThandle会成为主流，你现在学会对未来没坏处。&lt;/p>
+&lt;p>这里偷懒不想创建Volume，也不想多创建一个c#脚本来写colorTintPass，直接用一个intenal class来写吧。首先最大的区别就是用RThandle替代以前的API。重写OnCameraSetup()，调用ConfigureTarget()来设置当前Target，也就是刚刚传递过来的cameraColorTargetHandle。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;span class="lnt">63
+&lt;/span>&lt;span class="lnt">64
+&lt;/span>&lt;span class="lnt">65
+&lt;/span>&lt;span class="lnt">66
+&lt;/span>&lt;span class="lnt">67
+&lt;/span>&lt;span class="lnt">68
+&lt;/span>&lt;span class="lnt">69
+&lt;/span>&lt;span class="lnt">70
+&lt;/span>&lt;span class="lnt">71
+&lt;/span>&lt;span class="lnt">72
+&lt;/span>&lt;span class="lnt">73
+&lt;/span>&lt;span class="lnt">74
+&lt;/span>&lt;span class="lnt">75
+&lt;/span>&lt;span class="lnt">76
+&lt;/span>&lt;span class="lnt">77
+&lt;/span>&lt;span class="lnt">78
+&lt;/span>&lt;span class="lnt">79
+&lt;/span>&lt;span class="lnt">80
+&lt;/span>&lt;span class="lnt">81
+&lt;/span>&lt;span class="lnt">82
+&lt;/span>&lt;span class="lnt">83
+&lt;/span>&lt;span class="lnt">84
+&lt;/span>&lt;span class="lnt">85
+&lt;/span>&lt;span class="lnt">86
+&lt;/span>&lt;span class="lnt">87
+&lt;/span>&lt;span class="lnt">88
+&lt;/span>&lt;span class="lnt">89
+&lt;/span>&lt;span class="lnt">90
+&lt;/span>&lt;span class="lnt">91
+&lt;/span>&lt;span class="lnt">92
+&lt;/span>&lt;span class="lnt">93
+&lt;/span>&lt;span class="lnt">94
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-C#" data-lang="C#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">UnityEngine&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">UnityEngine.Rendering&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">UnityEngine.Rendering.Universal&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">ColorTintRenderFeature&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">ScriptableRendererFeature&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [System.Serializable]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">ColorTintSettings&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">Shader&lt;/span> &lt;span class="n">colorTintShader&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">RenderPassEvent&lt;/span> &lt;span class="n">passEvent&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">RenderPassEvent&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BeforeRenderingPostProcessing&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">ScriptableRenderPassInput&lt;/span> &lt;span class="n">requirements&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ScriptableRenderPassInput&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Color&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [Header(&amp;#34;ColorTint Settings&amp;#34;)]&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="n">Space&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">10&lt;/span>&lt;span class="p">)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">Color&lt;/span> &lt;span class="n">colorTint&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Color&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">red&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">ColorTintSettings&lt;/span> &lt;span class="n">colorTintSettings&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ColorTintSettings&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">ColorTintPass&lt;/span> &lt;span class="n">colorTintPass&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">SetupRenderPasses&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ScriptableRenderer&lt;/span> &lt;span class="n">renderer&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">RenderingData&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintPass&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ConfigureInput&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">requirements&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintPass&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Setup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">renderer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraColorTargetHandle&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Create&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintPass&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ColorTintPass&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintPass&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">renderPassEvent&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">passEvent&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">AddRenderPasses&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ScriptableRenderer&lt;/span> &lt;span class="n">renderer&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">ref&lt;/span> &lt;span class="n">RenderingData&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">renderer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">EnqueuePass&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">colorTintPass&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">protected&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Dispose&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">bool&lt;/span> &lt;span class="n">disposing&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintPass&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Dispose&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">ColorTintPass&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">ScriptableRenderPass&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">ProfilingSampler&lt;/span> &lt;span class="n">profilingSampler&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ProfilingSampler&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nameof&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ColorTintPass&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">ColorTintSettings&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">Material&lt;/span> &lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">ColorTintID&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Shader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">PropertyToID&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;_ColorTint&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">BlitTextureID&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Shader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">PropertyToID&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;_BlitTexture&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">RTHandle&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">RTHandle&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Setup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">RTHandle&lt;/span> &lt;span class="n">colorHandle&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ColorTintSettings&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">colorTintSettings&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Shader&lt;/span> &lt;span class="n">shader&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">colorTintShader&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">shader&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintMaterial&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">CoreUtils&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateEngineMaterial&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">shader&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">source&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">colorHandle&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Dispose&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">source&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Release&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CoreUtils&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Destroy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnCameraSetup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CommandBuffer&lt;/span> &lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">ref&lt;/span> &lt;span class="n">RenderingData&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ConfigureTarget&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">source&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">colorCopyDescriptor&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraTargetDescriptor&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorCopyDescriptor&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">depthBufferBits&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">DepthBits&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">None&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">RenderingUtils&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReAllocateIfNeeded&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">ref&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorCopyDescriptor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;_FullscreenPassColorCopy&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Execute&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ScriptableRenderContext&lt;/span> &lt;span class="n">context&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">ref&lt;/span> &lt;span class="n">RenderingData&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">colorTintMaterial&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CommandBuffer&lt;/span> &lt;span class="n">cmd&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">CommandBufferPool&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Get&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">cameraData&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">renderingData&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cameraData&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span> &lt;span class="n">ProfilingScope&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">profilingSampler&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SetColor&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ColorTintID&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">colorTint&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Blitter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BlitCameraTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SetTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">BlitTextureID&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Blitter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BlitCameraTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">context&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ExecuteCommandBuffer&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">cmd&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Clear&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CommandBufferPool&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Release&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>RT的初始化方法&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-C#" data-lang="C#">&lt;span class="line">&lt;span class="cl">&lt;span class="n">RenderingUtils&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReAllocateIfNeeded&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">ref&lt;/span> &lt;span class="n">copiedColor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorCopyDescriptor&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;_FullscreenPassColorCopy&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里偷懒直接用Blitter.BlitCameraTexture(cmd, source, source, colorTintMaterial, 0) 直接把source当作最终的RT并写入colorTintMaterial，按照逻辑的话，写成就和之前cmd.blit写出来到一个暂时的RT上再写入原source一样了。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-HLSL" data-lang="HLSL">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Blitter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BlitCameraTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">temp&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mo">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">colorTintMaterial&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SetColor&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ColorTintID&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">colorTintSettings&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">colorTint&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Blitter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BlitCameraTexture&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cmd&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">temp&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>最终效果如图&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/urp-14-renderfeature-%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F/URP14.png"
+width="1307"
+height="745"
+srcset="https://kampter.github.io/p/urp-14-renderfeature-%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F/URP14_hu_a2c773391cb3486f.png 480w, https://kampter.github.io/p/urp-14-renderfeature-%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F/URP14_hu_51e0e20956c2c016.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="175"
+data-flex-basis="421px"
+>&lt;/p>
+&lt;h2 id="参考">参考
+&lt;/h2>&lt;ol>
+&lt;li>&lt;a class="link" href="https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@14.0/manual/upgrade-guide-2022-2.html" target="_blank" rel="noopener"
+>Upgrading to URP 14 (Unity 2022.2) | Universal RP | 14.0.6 (unity3d.com)&lt;/a>&lt;/li>
+&lt;/ol></description></item><item><title>Unity 项目优化</title><link>https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/</link><pubDate>Mon, 27 Feb 2023 22:34:27 +0000</pubDate><guid>https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/</guid><description>&lt;h2 id="资产说明">资产说明
+&lt;/h2>&lt;p>这次使用的全部资产来自&lt;a class="link" href="https://assetstore.unity.com/packages/3d/environments/landscapes/toon-fantasy-nature-215197" target="_blank" rel="noopener"
+>Toon Fantasy Nature&lt;/a> 这个Pacakage，直接使用下面的的Lake 01场景，原价是比较贵的，刚刚参加的Game Jam有优惠，几个特效，场景，人物还有音频等等资产加起来不到20刀还是蛮划算的，谢谢Unity。&lt;/p>
+&lt;h2 id="upr">UPR
+&lt;/h2>&lt;p>使用Unity官方自带的检测工具过一遍全部的资产，先用&lt;a class="link" href="https://upr.unity.cn/instructions/assetchecker" target="_blank" rel="noopener"
+>AssetChecker Win&lt;/a>过一遍总览一下有哪些问题。&lt;/p>
+&lt;p>使用方式也非常简单，直接查看用户手册即可，这工具绿色好用，真心点赞。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="line">&lt;span class="cl">.&lt;span class="se">\a&lt;/span>ssetcheck.exe --project&lt;span class="o">=&lt;/span>&amp;lt;project_path&amp;gt; --projectId&lt;span class="o">=&lt;/span>&amp;lt;project_id&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&amp;lt;project_path&amp;gt;为Unity工程所在路径，&amp;lt;project_id&amp;gt;为UPR项目Id。&lt;/p>
+&lt;p>&amp;lt;project_id&amp;gt;非必需项。如果填写了&amp;lt;project_id&amp;gt;，检测结束后，可直接在UPR网站该项目内查看检测结果。&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227224213960.png"
+width="1164"
+height="709"
+srcset="https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227224213960_hu_84304b956a48e824.png 480w, https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227224213960_hu_64446ef5ace8666b.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="164"
+data-flex-basis="394px"
+>&lt;/p>
+&lt;p>运行游戏看一下效果&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227224717438.png"
+width="1531"
+height="874"
+srcset="https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227224717438_hu_e02a6f3796a8eb8c.png 480w, https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227224717438_hu_5c0d3daaf9d457d3.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="175"
+data-flex-basis="420px"
+>&lt;/p>
+&lt;p>看一下内存占用情况&lt;/p>
+&lt;p>&lt;img src="https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227230210520.png"
+width="1775"
+height="964"
+srcset="https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227230210520_hu_67bd3f87793086d6.png 480w, https://kampter.github.io/p/unity-%E9%A1%B9%E7%9B%AE%E4%BC%98%E5%8C%96/image-20230227230210520_hu_1d554c64d6ac491b.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="184"
+data-flex-basis="441px"
+>&lt;/p>
+&lt;p>&amp;mdash;未完待续&amp;mdash;&lt;/p></description></item></channel></rss>
